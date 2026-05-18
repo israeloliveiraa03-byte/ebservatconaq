@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Observatório da Educação Escolar Quilombola</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header {
+            background: linear-gradient(135deg, #1a2a3a, #0f1a24);
+            color: white;
+            padding: 25px;
+            border-radius: 20px;
+            margin-bottom: 25px;
+        }
+        .header h1 { font-size: 1.6rem; margin-bottom: 8px; }
+        .last-update { font-size: 0.75rem; opacity: 0.8; margin-top: 12px; }
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-left: 5px solid #dc3545;
+        }
+        .filters-card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .filters-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: flex-end;
+        }
+        .filter-group {
+            flex: 1;
+            min-width: 160px;
+        }
+        .filter-group label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+        .filter-group select, .filter-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 12px;
+            background: white;
+        }
+        .reset-btn, .export-btn {
+            background: #e67e22;
+            color: white;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        .export-btn { background: #27ae60; }
+        .reset-btn:hover { background: #d35400; }
+        .export-btn:hover { background: #219a52; }
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .kpi-card {
+            background: white;
+            border-radius: 16px;
+            padding: 15px;
+            text-align: center;
+            border-top: 4px solid #e67e22;
+        }
+        .kpi-number { font-size: 1.8rem; font-weight: 800; color: #2c3e50; }
+        .kpi-label { font-size: 0.75rem; color: #5d6d7e; }
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .chart-card {
+            background: white;
+            border-radius: 16px;
+            padding: 15px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+        .chart-card h3 {
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+            border-left: 3px solid #e67e22;
+            padding-left: 10px;
+            line-height: 1.3;
+        }
+        canvas { max-height: 340px; width: 100%; }
+        .inference-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .inference-card {
+            background: #fff8f0;
+            border-radius: 16px;
+            padding: 18px;
+            border-left: 6px solid #e67e22;
+        }
+        .inference-card h4 { color: #c0392b; margin-bottom: 10px; }
+        .table-wrapper {
+            background: white;
+            border-radius: 16px;
+            padding: 15px;
+            overflow-x: auto;
+            margin-bottom: 25px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75rem;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            vertical-align: top;
+        }
+        th { background: #2c3e50; color: white; }
+        .footer { text-align: center; font-size: 0.7rem; color: #7f8c8d; padding: 20px; }
+        .section-title {
+            margin: 30px 0 15px;
+            font-size: 1.2rem;
+            color: #2c3e50;
+            border-left: 5px solid #e67e22;
+            padding-left: 10px;
+        }
+        .module-description {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 15px;
+        }
+        .layout {
+            display: flex;
+            gap: 20px;
+        }
+        .sidebar {
+            width: 260px;
+            background: #16222c;
+            color: white;
+            border-radius: 20px;
+            padding: 20px;
+            height: calc(100vh - 40px);
+            position: sticky;
+            top: 20px;
+        }
+        .sidebar h2 { font-size: 1rem; margin-bottom: 20px; }
+        .sidebar a {
+            display: block;
+            color: #dfe6e9;
+            text-decoration: none;
+            padding: 10px 12px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            transition: 0.2s;
+        }
+        .sidebar a:hover { background: #e67e22; color: white; }
+        .main-content { flex: 1; }
+        @media (max-width: 900px) {
+            .layout { flex-direction: column; }
+            .sidebar { width: 100%; height: auto; position: relative; }
+        }
+        @media (max-width: 700px) {
+            .charts-grid { grid-template-columns: 1fr; }
+            .filters-grid { flex-direction: column; align-items: stretch; }
+            .filter-group { min-width: 100%; }
+            body { padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+<div class="layout">
+<div class="sidebar">
+    <h2>📚 Observatório</h2>
+    <a href="#visao-geral">📊 Visão Geral</a>
+    <a href="#perfil">🌎 Perfil dos Territórios</a>
+    <a href="#politicas">📜 Políticas e Documentos</a>
+    <a href="#fechamento">🏚️ Fechamento de Escolas</a>
+    <a href="#ensino-medio">🎓 Ensino Médio e Evasão</a>
+    <a href="#infraestrutura">🏫 Infraestrutura</a>
+    <a href="#transporte">🚌 Transporte</a>
+    <a href="#alimentacao">🍽️ Alimentação Escolar</a>
+    <a href="#racismo">⚠️ Racismo</a>
+    <a href="#participacao">🤝 Participação</a>
+    <a href="#avaliacao">⭐ Avaliação da EEQ</a>
+    <a href="#relatos">📝 Relatos</a>
+</div>
+<div class="main-content">
+    <div class="header">
+        <h1>📊 Observatório da Educação Escolar Quilombola</h1>
+        <p>Monitoramento de infraestrutura, transporte, racismo, fechamento de escolas e participação comunitária</p>
+        <div class="last-update" id="updateInfo">Carregando dados...</div>
+    </div>
+    <div id="errorContainer"></div>
+    <div class="filters-card">
+        <div class="filters-grid">
+            <div class="filter-group"><label>🌎 Região</label><select id="filterRegiao"><option value="all">Todas</option></select></div>
+            <div class="filter-group"><label>📍 UF</label><select id="filterUF"><option value="all">Todos</option></select></div>
+            <div class="filter-group"><label>⚠️ Racismo na escola</label><select id="filterRacismo"><option value="all">Todos</option><option value="Sim">Sim</option><option value="Não">Não</option></select></div>
+            <div class="filter-group"><label>🏫 Fechamento de escola</label><select id="filterFechamento"><option value="all">Todos</option><option value="Sim">Houve</option><option value="Não">Não houve</option></select></div>
+            <div class="filter-group"><label>🎓 Oferta Ensino Médio</label><select id="filterEM"><option value="all">Todos</option><option value="Sim">Sim</option><option value="Não">Não</option></select></div>
+            <div class="filter-group"><button class="reset-btn" id="resetFilters">Limpar filtros</button>
+            <button class="export-btn" id="exportCSVBtn">📎 Exportar CSV</button></div>
+        </div>
+    </div>
+
+    <div id="visao-geral"><h2 class="section-title">📊 Visão Geral</h2><div class="kpi-grid" id="kpiArea"></div></div>
+
+    <div id="perfil"><h2 class="section-title">🌎 Perfil dos Territórios</h2>
+        <div class="charts-grid">
+            <div class="chart-card"><h3>4. Região do país</h3><canvas id="chartRegiao"></canvas></div>
+            <div class="chart-card"><h3>5. Unidade Federativa (UF)</h3><canvas id="chartUF"></canvas></div>
+            <div class="chart-card"><h3>9. Estimativa de famílias no território</h3><canvas id="chartFamilias"></canvas></div>
+        </div>
+    </div>
+
+    <div id="politicas"><h2 class="section-title">📜 Políticas Públicas</h2>
+        <div class="charts-grid">
+            <div class="chart-card"><h3>10. Diretrizes Curriculares para EEQ</h3><canvas id="chartDiretrizes"></canvas></div>
+            <div class="chart-card"><h3>11. Concurso/Reserva de vagas para professores quilombolas</h3><canvas id="chartConcurso"></canvas></div>
+            <div class="chart-card"><h3>12. Escolas DENTRO do território</h3><canvas id="chartEscolasDentro"></canvas></div>
+            <div class="chart-card"><h3>13. Escolas FORA que atendem quilombolas</h3><canvas id="chartEscolasFora"></canvas></div>
+        </div>
+    </div>
+
+    <div id="fechamento"><h2 class="section-title">🏚️ Fechamento de Escolas</h2>
+        <div class="charts-grid">
+            <div class="chart-card"><h3>14. Houve fechamento/nucleação?</h3><canvas id="chartFechamentoGeral"></canvas></div>
+            <div class="chart-card"><h3>15. Impactos percebidos</h3><canvas id="chartImpactos"></canvas></div>
+            <div class="chart-card"><h3>16. Demanda por reabertura</h3><canvas id="chartDemandaReabertura"></canvas></div>
+            <div class="chart-card"><h3>17. Acionou órgãos externos?</h3><canvas id="chartOrgaosExternos"></canvas></div>
+        </div>
+    </div>
+
+    <div id="ensino-medio"><h2 class="section-title">🎓 Ensino Médio e Evasão</h2>
+        <div class="charts-grid">
+            <div class="chart-card"><h3>19. Oferta de Ensino Médio</h3><canvas id="chartOfertaEM"></canvas></div>
+            <div class="chart-card"><h3>20. Jovens param de estudar?</h3><canvas id="chartEvasaoEM"></canvas></div>
+            <div class="chart-card"><h3>21. Motivos para interrupção</h3><canvas id="chartMotivosEvasao"></canvas></div>
+        </div>
+    </div>
+
+    <div id="infraestrutura"><h2 class="section-title">🏫 Infraestrutura Escolar</h2>
+        <div class="charts-grid">
+            <div class="chart-card"><h3>Itens de infraestrutura precária/inexistente</h3><canvas id="chartInfra"></canvas></div>
+        </div>
+    </div>
+
+    <div id="transporte"><h2 class="section-title">🚌 Transporte Escolar</h2>
+        <div class="charts-grid">
+            <div class="chart-card"><h3>Condições ruins do transporte (% escolas)</h3><canvas id="chartTransporte"></canvas></div>
+            <div class="chart-card"><h3>Itens críticos do transporte (% discordância)</h3><canvas id="chartTransporteItens"></canvas></div>
+        </div>
+        <div class="inference-grid">
+            <div class="inference-card"><h4>🔎 Racismo x Fechamento</h4><div id="inferencia1">Calculando...</div></div>
+            <div class="inference-card"><h4>🚛 Transporte precário x Evasão</h4><div id="inferencia2">Calculando...</div></div>
+            <div class="inference-card"><h4>📋 Oferta de EM x Evasão</h4><div id="inferencia3">Calculando...</div></div>
+        </div>
+    </div>
+
+    <div id="alimentacao"><h2 class="section-title">🍽️ Alimentação Escolar</h2>
+        <div class="charts-grid">
+            <div class="chart-card"><h3>Oferta regular de alimentação quilombola</h3><canvas id="chartAlimentacaoOferta"></canvas></div>
+            <div class="chart-card"><h3>Quantidade adequada</h3><canvas id="chartAlimentacaoQuantidade"></canvas></div>
+            <div class="chart-card"><h3>Prioriza alimentos orgânicos e agroecológicos</h3><canvas id="chartAlimentacaoOrganicos"></canvas></div>
+            <div class="chart-card"><h3>Mínimo 30% da agricultura familiar</h3><canvas id="chartAlimentacaoAgricultura"></canvas></div>
+            <div class="chart-card"><h3>Respeita a cultura alimentar quilombola</h3><canvas id="chartAlimentacaoCultura"></canvas></div>
+        </div>
+    </div>
+
+    <div id="racismo"><h2 class="section-title">⚠️ Racismo</h2>
+        <div class="charts-grid">
+            <div class="chart-card"><h3>Há relatos de racismo na escola?</h3><canvas id="chartRacismo"></canvas></div>
+            <div class="chart-card"><h3>Conteúdos quilombolas no currículo?</h3><canvas id="chartConteudoQuilombola"></canvas></div>
+            <div class="chart-card"><h3>Há professores quilombolas?</h3><canvas id="chartProfessoresQuilombolas"></canvas></div>
+        </div>
+    </div>
+
+    <div id="participacao"><h2 class="section-title">🤝 Participação Comunitária</h2>
+        <div class="charts-grid">
+            <div class="chart-card"><h3>Comunidade é consultada nas decisões?</h3><canvas id="chartConsulta"></canvas></div>
+            <div class="chart-card"><h3>Comunidade participa do conselho escolar?</h3><canvas id="chartConselho"></canvas></div>
+            <div class="chart-card"><h3>Comunidade é ouvida na escolha de gestores?</h3><canvas id="chartGestores"></canvas></div>
+        </div>
+    </div>
+
+    <div id="avaliacao"><h2 class="section-title">⭐ Autoavaliação da EEQ</h2>
+        <div class="charts-grid">
+            <div class="chart-card"><h3>23. Como avalia a qualidade da EEQ no município?</h3><canvas id="chartAvaliacao"></canvas></div>
+        </div>
+    </div>
+
+    <div id="relatos"><h2 class="section-title">📝 Relatos e Sugestões</h2>
+        <div class="table-wrapper"><table id="dadosTable"><thead><tr><th>Comunidade</th><th>UF</th><th>Relato de racismo/fechamento</th><th>Sugestões</th></tr></thead><tbody><tr><td colspan="4">Carregando...</td></tr></tbody></table></div>
+    </div>
+    <div class="footer">Observatório da Educação Escolar Quilombola • Dados atualizados automaticamente</div>
+</div>
+</div>
+</div>
+
+<script>
+    Chart.register(ChartDataLabels);
+    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTcH5ek5iMwO7EiEZw4WHYJZOcIXRUqSmEtRCXl8X4KNrh0lx7Mhn39bcLumdcIRVknQ6dR2oF80SRl/pub?gid=619019966&single=true&output=csv";
+    const CSV_URL_PROXY = "https://api.allorigins.win/raw?url=" + encodeURIComponent(CSV_URL);
+    
+    let rawData = [], filteredData = [], allSchools = [];
+    let charts = {};
+
+    const filterRegiao = document.getElementById('filterRegiao');
+    const filterUF = document.getElementById('filterUF');
+    const filterRacismo = document.getElementById('filterRacismo');
+    const filterFechamento = document.getElementById('filterFechamento');
+    const filterEM = document.getElementById('filterEM');
+    const resetBtn = document.getElementById('resetFilters');
+    const exportCSVBtn = document.getElementById('exportCSVBtn');
+    const errorContainer = document.getElementById('errorContainer');
+    const updateInfo = document.getElementById('updateInfo');
+
+    function getSafe(row, key) { return row && row[key] ? row[key].toString().trim() : ""; }
+    
+    function getRegiao(row) {
+        let r = getSafe(row, "4. Identifique a região do país");
+        if (r.includes("Nordeste")) return "Nordeste";
+        if (r.includes("Sudeste")) return "Sudeste";
+        if (r.includes("Sul")) return "Sul";
+        if (r.includes("Centro-Oeste")) return "Centro-Oeste";
+        if (r.includes("Norte")) return "Norte";
+        return "Não informado";
+    }
+    
+    function getUF(row) { return getSafe(row, "5. Identifique a Unidade Federativa") || "Não informado"; }
+    
+    function getComunidade(row) {
+        let possiveis = [
+            "7. As informações fornecidas neste formulário se referem a qual Território/comunidade Quilombola?",
+            "Território/comunidade Quilombola"
+        ];
+        for (let p of possiveis) {
+            let val = getSafe(row, p);
+            if (val && val !== "") return val;
+        }
+        for (let key in row) {
+            if (key && (key.toLowerCase().includes("comunidade") || key.toLowerCase().includes("território"))) {
+                let val = getSafe(row, key);
+                if (val && val !== "" && !key.includes("Identifique")) return val;
+            }
+        }
+        return "Não informado";
+    }
+    
+    function getRacismo(row) {
+        let val = getSafe(row, "Há relatos de ocorrência de racismo no contexto desta escola?");
+        if (val.toLowerCase().includes("sim")) return "Sim";
+        return "Não";
+    }
+    
+    function getFechamento(row) {
+        let val = getSafe(row, "14. Nos últimos 10 anos houve fechamento de escolas dentro do território/comunidade quilombola, nucleação ou transferência de turmas para outras escolas?");
+        if (val.toLowerCase().includes("não houve")) return "Não";
+        if (val.toLowerCase().includes("sim")) return "Sim";
+        return "Não informado";
+    }
+    
+    function getOfertaEM(row) {
+        let val = getSafe(row, "19. É garantida a oferta de Ensino Médio dentro ou nas proximidades do território, evitando a migração forçada dos jovens?");
+        if (val.toLowerCase().includes("sim")) return "Sim";
+        if (val.toLowerCase().includes("não")) return "Não";
+        return "Não informado";
+    }
+    
+    function getAvaliacao(row) {
+        let val = getSafe(row, "23. Como você avalia a qualidade da Educação Escolar Quilombola no município?");
+        if (val.includes("Excelente")) return "Excelente";
+        if (val.includes("Boa")) return "Boa";
+        if (val.includes("Regular")) return "Regular";
+        if (val.includes("Ruim")) return "Ruim";
+        if (val.includes("Péssima")) return "Péssima";
+        return "Não avaliou";
+    }
+    
+    function getSugestoes(row) { 
+        return getSafe(row, "O que você sugere para melhorar o trabalho pedagógico desenvolvido por esta escola?") || "Nenhuma sugestão"; 
+    }
+    
+    function getRelatoRacismo(row) { 
+        return getSafe(row, "Caso tenha 'sim' respondido em alguma das questões anteriores, nos dê mais informações sobre fechamento ou nucleação de escola neste território quilombola") || getSafe(row, "Outros relatos informações sobre o transporte escolar"); 
+    }
+    
+    function getFamilias(row) {
+        let val = getSafe(row, "9. Quantas famílias (estimativa) há no território?");
+        if (val.includes("Até 30")) return "Até 30";
+        if (val.includes("31 a 60")) return "31-60";
+        if (val.includes("61 a 100")) return "61-100";
+        if (val.includes("101 a 150")) return "101-150";
+        if (val.includes("151 a 200")) return "151-200";
+        if (val.includes("Acima de 200")) return "Acima de 200";
+        return "Não informado";
+    }
+    
+    function getEvasao(row) {
+        let val = getSafe(row, "20. Os(as) jovens param de estudar por não ter o Ensino Médio dentro do território quilombola?");
+        if (val.toLowerCase().includes("param")) return "Sim";
+        if (val.toLowerCase().includes("não param")) return "Não";
+        return "Não informado";
+    }
+    
+    function getDiretrizes(row) {
+        let val = getSafe(row, "10. No seu município há Diretrizes Curriculares ou outro documento que oriente sobre a implementação da Educação Escolar Quilombolas?");
+        if (!val) return "Não informado";
+        if (val.toLowerCase().includes("não há")) return "Não há";
+        if (val.toLowerCase().includes("sim")) return "Sim";
+        return "Outro";
+    }
+    
+    function getConcurso(row) {
+        let val = getSafe(row, "11. No seu município existe processo seletivo, concurso ou reserva de vagas específicas para professoras(es) quilombolas?");
+        if (!val) return "Não informado";
+        if (val.toLowerCase().includes("sim")) return "Sim";
+        return "Não";
+    }
+    
+    function getValorByNumero(row, baseName, numero) {
+        // Tenta encontrar o valor para uma escola específica (1 a 5)
+        let sufixos = ["", ` ${numero}`, ` 2`, ` 3`, ` 4`, ` 5`];
+        for (let suf of sufixos) {
+            let key = baseName + suf;
+            let val = getSafe(row, key);
+            if (val && val !== "") return val;
+        }
+        return "";
+    }
+    
+    function extractSchools(row) {
+        let schools = [];
+        for (let i = 1; i <= 5; i++) {
+            let nome = getValorByNumero(row, "Nome da Escola", i);
+            if (nome && nome !== "") {
+                let school = {
+                    nome: nome,
+                    inep: getValorByNumero(row, "Código da escola no INEP", i),
+                    localizacao: getValorByNumero(row, "Qual a localização desta escola?", i),
+                    // Infraestrutura
+                    salaAula: getValorByNumero(row, "\"Esta escola possui infraestrutura adequada? Avalie os seguintes itens:\nMelhorar escala [Salas de aula]\"", i),
+                    biblioteca: getValorByNumero(row, "\"Esta escola possui infraestrutura adequada? Avalie os seguintes itens:\nMelhorar escala [Biblioteca]\"", i),
+                    laboratorio: getValorByNumero(row, "\"Esta escola possui infraestrutura adequada? Avalie os seguintes itens:\nMelhorar escala [Laboratório de informática]\"", i),
+                    internet: getValorByNumero(row, "\"Esta escola possui infraestrutura adequada? Avalie os seguintes itens:\nMelhorar escala [Acesso à internet]\"", i),
+                    espacoCultural: getValorByNumero(row, "\"Esta escola possui infraestrutura adequada? Avalie os seguintes itens:\nMelhorar escala [Espaço para práticas e apresentações culturais]\"", i),
+                    espacoEsportivo: getValorByNumero(row, "\"Esta escola possui infraestrutura adequada? Avalie os seguintes itens:\nMelhorar escala [Espaço para práticas esportivas]\"", i),
+                    refeitorio: getValorByNumero(row, "\"Esta escola possui infraestrutura adequada? Avalie os seguintes itens:\nMelhorar escala [Refeitório]\"", i),
+                    cozinha: getValorByNumero(row, "\"Esta escola possui infraestrutura adequada? Avalie os seguintes itens:\nMelhorar escala [Cozinha]\"", i),
+                    agua: getValorByNumero(row, "\"Esta escola possui infraestrutura adequada? Avalie os seguintes itens:\nMelhorar escala [Abastecimento de água potável]\"", i),
+                    acessibilidade: getValorByNumero(row, "\"Esta escola possui infraestrutura adequada? Avalie os seguintes itens:\nMelhorar escala [Acessibilidade arquitetônica]\"", i),
+                    // Transporte
+                    transporteUso: getValorByNumero(row, "Para acessar esta escola, há estudantes da comunidade que fazem uso de transporte escolar?", i),
+                    transporteSeguro: getValorByNumero(row, "Caso tenham estudantes que façam uso de transporte escolar, quais as condições desse transporte? [O transporte é seguro e confortável]", i),
+                    transporteVeiculo: getValorByNumero(row, "Caso tenham estudantes que façam uso de transporte escolar, quais as condições desse transporte? [O veículo está em bom estado de conservação.]", i),
+                    transporteEstradas: getValorByNumero(row, "Caso tenham estudantes que façam uso de transporte escolar, quais as condições desse transporte? [As estradas estão em boas condições.]", i),
+                    transporteHorarios: getValorByNumero(row, "Caso tenham estudantes que façam uso de transporte escolar, quais as condições desse transporte? [Os horários de partida e chegada são adequados.]", i),
+                    transporteRegularidade: getValorByNumero(row, "Caso tenham estudantes que façam uso de transporte escolar, quais as condições desse transporte? [Há regularidade na oferta do transporte.]", i),
+                    transportePermanencia: getValorByNumero(row, "Caso tenham estudantes que façam uso de transporte escolar, quais as condições desse transporte? [O tempo de permanência dentro do veículo é adequado.]", i),
+                    transporteTratamento: getValorByNumero(row, "Caso tenham estudantes que façam uso de transporte escolar, quais as condições desse transporte? [O tratamento dado pelos prestadores de serviço é adequado.]", i),
+                    transporteMotorista: getValorByNumero(row, "Caso tenham estudantes que façam uso de transporte escolar, quais as condições desse transporte? [Os(as) motoristas são habilitados e capacitados para a função.]", i),
+                    // Alimentação
+                    alimentacaoOferta: getValorByNumero(row, "Sobre a Alimentação Escolar, analise as afirmações abaixo: [Há oferta regular de alimentação escolar quilombola.]", i),
+                    alimentacaoQuantidade: getValorByNumero(row, "Sobre a Alimentação Escolar, analise as afirmações abaixo: [A oferta é feita em quantidade adequada.]", i),
+                    alimentacaoOrganicos: getValorByNumero(row, "Sobre a Alimentação Escolar, analise as afirmações abaixo: [Prioriza alimentos orgânicos e agroecológicos.]", i),
+                    alimentacaoAgricultura: getValorByNumero(row, "Sobre a Alimentação Escolar, analise as afirmações abaixo: [O mínimo de 30% dos produtos é oriundo da agricultura familiar.]", i),
+                    alimentacaoCultura: getValorByNumero(row, "Sobre a Alimentação Escolar, analise as afirmações abaixo: [A alimentação respeita a cultura alimentar quilombola?]", i),
+                    conteudoQuilombola: getValorByNumero(row, "As aulas e materiais didáticos utilizados nesta escola incluem conteúdos que abordem a história, cultura e saberes das comunidades quilombolas?", i),
+                    professoresQuilombolas: getValorByNumero(row, "Há professoras(es) quilombolas que trabalham nesta escola?", i),
+                    participacaoConsulta: getValorByNumero(row, "No que se refere à participação da comunidade na gestão escolar, responda: [A comunidade é consultada em tomadas de decisão e mudanças importantes na escola?]", i),
+                    participacaoConselho: getValorByNumero(row, "No que se refere à participação da comunidade na gestão escolar, responda: [A comunidade participa do conselho escolar?]", i),
+                    participacaoGestores: getValorByNumero(row, "No que se refere à participação da comunidade na gestão escolar, responda: [A comunidade quilombola é ouvida na escolha de gestores escolares?]", i)
+                };
+                school.regiao = getRegiao(row);
+                school.uf = getUF(row);
+                school.comunidade = getComunidade(row);
+                school.racismo = getRacismo(row);
+                school.fechamento = getFechamento(row);
+                school.ofertaEM = getOfertaEM(row);
+                school.evasao = getEvasao(row);
+                schools.push(school);
+            }
+        }
+        return schools;
+    }
+    
+    function isInfraPrecaria(val) {
+        return val && (val.toLowerCase().includes("precária") || val.toLowerCase().includes("insuficiente") || val.toLowerCase().includes("inexistente"));
+    }
+    
+    function isTransporteRuim(val) {
+        return val && val.toLowerCase().includes("discordo");
+    }
+
+    function loadData() {
+        updateInfo.innerHTML = "🔄 Carregando dados...";
+        Papa.parse(CSV_URL, { download: true, header: true, skipEmptyLines: true,
+            complete: (results) => { if(results.data && results.data.length > 0) processData(results.data); else loadDataWithProxy(); },
+            error: () => loadDataWithProxy()
+        });
+    }
+    
+    function loadDataWithProxy() {
+        updateInfo.innerHTML = "🔄 Carregando via proxy...";
+        Papa.parse(CSV_URL_PROXY, { download: true, header: true, skipEmptyLines: true,
+            complete: (results) => { if(results.data && results.data.length > 0) processData(results.data); else showError(); },
+            error: () => showError()
+        });
+    }
+    
+    function showError() {
+        updateInfo.innerHTML = "❌ Erro ao carregar dados.";
+        errorContainer.innerHTML = `<div class="error-message"><strong>⚠️ Erro ao carregar CSV.</strong><br>Verifique se a planilha está publicada corretamente.</div>`;
+    }
+    
+    function processData(data) {
+        rawData = data.filter(row => Object.values(row).some(v => v && v.toString().trim() !== ""));
+        updateInfo.innerHTML = `✅ ${rawData.length} registros carregados!`;
+        applyFilters();
+    }
+    
+    function rebuildAllSchools() {
+        allSchools = [];
+        for (let row of filteredData) {
+            let schools = extractSchools(row);
+            allSchools.push(...schools);
+        }
+    }
+    
+    function applyFilters() {
+        filteredData = rawData.filter(row => {
+            if (filterRegiao.value !== "all" && getRegiao(row) !== filterRegiao.value) return false;
+            if (filterUF.value !== "all" && getUF(row) !== filterUF.value) return false;
+            if (filterRacismo.value !== "all" && getRacismo(row) !== filterRacismo.value) return false;
+            if (filterFechamento.value !== "all" && getFechamento(row) !== filterFechamento.value) return false;
+            if (filterEM.value !== "all" && getOfertaEM(row) !== filterEM.value) return false;
+            return true;
+        });
+        rebuildAllSchools();
+        updateDropdowns();
+        updateKPIs();
+        updateAllCharts();
+        updateInferences();
+        updateTable();
+    }
+    
+    function updateDropdowns() {
+        let regioes = [...new Set(rawData.map(r => getRegiao(r)))].filter(r=>r!=="Não informado").sort();
+        let ufs = [...new Set(rawData.map(r => getUF(r)))].filter(u=>u!=="Não informado").sort();
+        filterRegiao.innerHTML = '<option value="all">Todas</option>' + regioes.map(r=>`<option value="${r}">${r}</option>`).join('');
+        filterUF.innerHTML = '<option value="all">Todos</option>' + ufs.map(u=>`<option value="${u}">${u}</option>`).join('');
+    }
+    
+    function updateKPIs() {
+        let totalRespostas = filteredData.length;
+        let totalComunidades = new Set(filteredData.map(r=>getComunidade(r))).size;
+        let totalEscolas = allSchools.length;
+        let escolasDentro = allSchools.filter(s=>s.localizacao && s.localizacao.includes("própria comunidade")).length;
+        let racismoCount = allSchools.filter(s=>s.racismo==="Sim").length;
+        document.getElementById('kpiArea').innerHTML = `
+            <div class="kpi-card"><div class="kpi-number">${totalRespostas}</div><div class="kpi-label">Respostas ao formulário</div></div>
+            <div class="kpi-card"><div class="kpi-number">${totalComunidades}</div><div class="kpi-label">Comunidades/territórios</div></div>
+            <div class="kpi-card"><div class="kpi-number">${totalEscolas}</div><div class="kpi-label">Escolas cadastradas</div></div>
+            <div class="kpi-card"><div class="kpi-number">${escolasDentro}</div><div class="kpi-label">Escolas no território</div></div>
+            <div class="kpi-card"><div class="kpi-number">${racismoCount}</div><div class="kpi-label">Relatos de racismo</div></div>
+        `;
+    }
+    
+    function buildPercentBarChart(id, dataObj, title, color='#e67e22') {
+        if(charts[id]) charts[id].destroy();
+        let ctx = document.getElementById(id);
+        if(!ctx) return;
+        let total = Object.values(dataObj).reduce((a,b)=>a+b,0);
+        let percentData = {};
+        for(let [k,v] of Object.entries(dataObj)) {
+            percentData[k] = total ? (v/total*100).toFixed(1) : 0;
+        }
+        charts[id] = new Chart(ctx, { 
+            type: 'bar', 
+            data: { labels: Object.keys(percentData), datasets: [{ data: Object.values(percentData), backgroundColor: color, label: '%' }] }, 
+            options: { responsive: true, maintainAspectRatio: true, scales: { y: { max: 100, title: { display: true, text: 'Porcentagem (%)' } } }, plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.raw}%` } }, datalabels: { anchor: 'end', align: 'top', formatter: (v) => `${v}%`, font: { weight: 'bold' } } } }
+        });
+    }
+    
+    function buildPercentHorizontalChart(id, dataObj, color='#e67e22') {
+        if(charts[id]) charts[id].destroy();
+        let ctx = document.getElementById(id);
+        if(!ctx) return;
+        let total = Object.values(dataObj).reduce((a,b)=>a+b,0);
+        let percentData = {};
+        for(let [k,v] of Object.entries(dataObj)) {
+            percentData[k] = total ? (v/total*100).toFixed(1) : 0;
+        }
+        charts[id] = new Chart(ctx, { 
+            type: 'bar', 
+            data: { labels: Object.keys(percentData), datasets: [{ data: Object.values(percentData), backgroundColor: color }] }, 
+            options: { indexAxis: 'y', responsive: true, maintainAspectRatio: true, scales: { x: { max: 100, title: { display: true, text: 'Porcentagem (%)' } } }, plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.raw}%` } }, datalabels: { anchor: 'end', align: 'right', formatter: (v) => `${v}%`, font: { weight: 'bold' } } } }
+        });
+    }
+    
+    function buildPercentPieChart(id, dataObj) {
+        if(charts[id]) charts[id].destroy();
+        let ctx = document.getElementById(id);
+        if(!ctx) return;
+        let total = Object.values(dataObj).reduce((a,b)=>a+b,0);
+        let percentData = {};
+        for(let [k,v] of Object.entries(dataObj)) {
+            percentData[k] = total ? (v/total*100).toFixed(1) : 0;
+        }
+        charts[id] = new Chart(ctx, { 
+            type: 'pie', 
+            data: { labels: Object.keys(percentData), datasets: [{ data: Object.values(percentData) }] }, 
+            options: { responsive: true, maintainAspectRatio: true, plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.raw}%` } }, datalabels: { formatter: (v) => `${v}%`, font: { weight: 'bold' } } } }
+        });
+    }
+    
+    function updateAllCharts() {
+        // Região
+        let regCount = {};
+        filteredData.forEach(r=>{ let reg=getRegiao(r); regCount[reg]=(regCount[reg]||0)+1; });
+        buildPercentBarChart('chartRegiao', regCount, 'Região', '#3498db');
+        
+        // UF
+        let ufCount = {};
+        filteredData.forEach(r=>{ let uf=getUF(r); if(uf!=="Não informado") ufCount[uf]=(ufCount[uf]||0)+1; });
+        buildPercentHorizontalChart('chartUF', ufCount, '#3498db');
+        
+        // Famílias
+        let famCount = {};
+        filteredData.forEach(r=>{ let f=getFamilias(r); famCount[f]=(famCount[f]||0)+1; });
+        buildPercentBarChart('chartFamilias', famCount, 'Famílias', '#27ae60');
+        
+        // Diretrizes
+        let dirCount = {};
+        filteredData.forEach(r=>{ let d=getDiretrizes(r); dirCount[d]=(dirCount[d]||0)+1; });
+        buildPercentPieChart('chartDiretrizes', dirCount);
+        
+        // Concurso
+        let concCount = {};
+        filteredData.forEach(r=>{ let c=getConcurso(r); concCount[c]=(concCount[c]||0)+1; });
+        buildPercentPieChart('chartConcurso', concCount);
+        
+        // Escolas dentro/fora (contagem)
+        let dentroCount = { "0":0, "1":0, "2":0, "3":0, "4":0, "5+":0 };
+        let foraCount = { "0":0, "1":0, "2":0, "3":0, "4":0, "5+":0 };
+        filteredData.forEach(r=>{
+            let d = getSafe(r,"12. Quantas escolas tem DENTRO do território/comunidade quilombola?");
+            if(d==="05 escolas ou mais"||d==="5 escolas ou mais") dentroCount["5+"]++;
+            else if(d && !isNaN(parseInt(d))) dentroCount[parseInt(d)] = (dentroCount[parseInt(d)]||0)+1;
+            let f = getSafe(r,"13. Quantas escolas ATEDEM estudantes quilombolas, mas estão FORA do território/comunidade quilombola?");
+            if(f==="05 escolas ou mais"||f==="5 escolas ou mais") foraCount["5+"]++;
+            else if(f && !isNaN(parseInt(f))) foraCount[parseInt(f)] = (foraCount[parseInt(f)]||0)+1;
+        });
+        buildPercentBarChart('chartEscolasDentro', dentroCount, 'Escolas dentro', '#27ae60');
+        buildPercentBarChart('chartEscolasFora', foraCount, 'Escolas fora', '#e74c3c');
+        
+        // Fechamento
+        let fechCount = {};
+        filteredData.forEach(r=>{ let f=getFechamento(r); fechCount[f]=(fechCount[f]||0)+1; });
+        buildPercentPieChart('chartFechamentoGeral', fechCount);
+        
+        // Impactos
+        let impactos = { "Queda/piora aprendizagem":0, "Cansaço extremo":0, "Risco no trajeto":0, "Aumento racismo/bullying":0, "Perda vínculo comunitário":0, "Aumento custos":0 };
+        filteredData.forEach(r=>{
+            let imp = getSafe(r,"15. Quais os impactos percebidos após fechamento/nucleação da escola?");
+            if(imp.includes("Queda")) impactos["Queda/piora aprendizagem"]++;
+            if(imp.includes("Cansaço")) impactos["Cansaço extremo"]++;
+            if(imp.includes("Risco")) impactos["Risco no trajeto"]++;
+            if(imp.includes("racismo")) impactos["Aumento racismo/bullying"]++;
+            if(imp.includes("vínculo")) impactos["Perda vínculo comunitário"]++;
+            if(imp.includes("custo")) impactos["Aumento custos"]++;
+        });
+        buildPercentHorizontalChart('chartImpactos', impactos, '#e74c3c');
+        
+        // Demanda reabertura
+        let demCount = {};
+        filteredData.forEach(r=>{ let d=getSafe(r,"16. Existe demanda comunitária por reabertura/retorno de turmas no território?"); if(d) demCount[d]=(demCount[d]||0)+1; });
+        buildPercentPieChart('chartDemandaReabertura', demCount);
+        
+        // Órgãos externos
+        let orgCount = {};
+        filteredData.forEach(r=>{ let o=getSafe(r,"17. A comunidade já precisou acionar órgãos externos?"); if(o) orgCount[o]=(orgCount[o]||0)+1; });
+        buildPercentPieChart('chartOrgaosExternos', orgCount);
+        
+        // Oferta EM
+        let emCount = {};
+        filteredData.forEach(r=>{ let o=getOfertaEM(r); emCount[o]=(emCount[o]||0)+1; });
+        buildPercentPieChart('chartOfertaEM', emCount);
+        
+        // Evasão
+        let evCount = {};
+        filteredData.forEach(r=>{ let e=getEvasao(r); evCount[e]=(evCount[e]||0)+1; });
+        buildPercentPieChart('chartEvasaoEM', evCount);
+        
+        // Motivos evasão
+        let motivos = { "Distância/transporte":0, "Racismo/discriminação":0, "Trabalho":0, "Falta apoio financeiro":0, "Violência/insegurança":0, "Gravidez/cuidado familiar":0 };
+        filteredData.forEach(r=>{
+            let m = getSafe(r,"21. Principais motivos para interrupção dos estudos no Ensino Médio (se houver)");
+            if(m.includes("Distância")) motivos["Distância/transporte"]++;
+            if(m.includes("Racismo")) motivos["Racismo/discriminação"]++;
+            if(m.includes("Trabalho")) motivos["Trabalho"]++;
+            if(m.includes("financeiro")) motivos["Falta apoio financeiro"]++;
+            if(m.includes("Violência")) motivos["Violência/insegurança"]++;
+            if(m.includes("Gravidez")) motivos["Gravidez/cuidado familiar"]++;
+        });
+        buildPercentHorizontalChart('chartMotivosEvasao', motivos, '#e67e22');
+        
+        // Infraestrutura
+        let infra = { "Salas de aula":0, "Biblioteca":0, "Lab. informática":0, "Internet":0, "Espaço cultural":0, "Espaço esportivo":0, "Refeitório":0, "Cozinha":0, "Água potável":0, "Acessibilidade":0 };
+        for(let s of allSchools) {
+            if(isInfraPrecaria(s.salaAula)) infra["Salas de aula"]++;
+            if(isInfraPrecaria(s.biblioteca)) infra["Biblioteca"]++;
+            if(isInfraPrecaria(s.laboratorio)) infra["Lab. informática"]++;
+            if(isInfraPrecaria(s.internet)) infra["Internet"]++;
+            if(isInfraPrecaria(s.espacoCultural)) infra["Espaço cultural"]++;
+            if(isInfraPrecaria(s.espacoEsportivo)) infra["Espaço esportivo"]++;
+            if(isInfraPrecaria(s.refeitorio)) infra["Refeitório"]++;
+            if(isInfraPrecaria(s.cozinha)) infra["Cozinha"]++;
+            if(isInfraPrecaria(s.agua)) infra["Água potável"]++;
+            if(isInfraPrecaria(s.acessibilidade)) infra["Acessibilidade"]++;
+        }
+        buildPercentHorizontalChart('chartInfra', infra, '#e67e22');
+        
+        // Transporte geral (% de escolas com pelo menos um problema)
+        let transporteComProblema = 0;
+        for(let s of allSchools) {
+            if(isTransporteRuim(s.transporteSeguro)||isTransporteRuim(s.transporteVeiculo)||isTransporteRuim(s.transporteEstradas)||
+               isTransporteRuim(s.transporteHorarios)||isTransporteRuim(s.transporteRegularidade)||isTransporteRuim(s.transportePermanencia)||
+               isTransporteRuim(s.transporteTratamento)||isTransporteRuim(s.transporteMotorista)) {
+                transporteComProblema++;
+            }
+        }
+        let percTransporteRuim = allSchools.length ? (transporteComProblema/allSchools.length*100).toFixed(1) : 0;
+        if(charts.transporte) charts.transporte.destroy();
+        let ctxTrans = document.getElementById('chartTransporte');
+        if(ctxTrans) {
+            charts.transporte = new Chart(ctxTrans, { type: 'doughnut', data: { labels: ['Com problemas no transporte', 'Transporte adequado'], datasets: [{ data: [percTransporteRuim, 100-percTransporteRuim], backgroundColor: ['#c0392b','#27ae60'] }] }, options: { plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.raw}%` } }, datalabels: { formatter: (v) => `${v}%`, font: { weight: 'bold' } } } } });
+        }
+        
+        // Itens de transporte (% de discordância)
+        let transItens = { "Seguro/confortável":0, "Veículo bom estado":0, "Estradas boas":0, "Horários adequados":0, "Regularidade":0, "Tempo adequado":0, "Tratamento adequado":0, "Motorista habilitado":0 };
+        for(let s of allSchools) {
+            if(isTransporteRuim(s.transporteSeguro)) transItens["Seguro/confortável"]++;
+            if(isTransporteRuim(s.transporteVeiculo)) transItens["Veículo bom estado"]++;
+            if(isTransporteRuim(s.transporteEstradas)) transItens["Estradas boas"]++;
+            if(isTransporteRuim(s.transporteHorarios)) transItens["Horários adequados"]++;
+            if(isTransporteRuim(s.transporteRegularidade)) transItens["Regularidade"]++;
+            if(isTransporteRuim(s.transportePermanencia)) transItens["Tempo adequado"]++;
+            if(isTransporteRuim(s.transporteTratamento)) transItens["Tratamento adequado"]++;
+            if(isTransporteRuim(s.transporteMotorista)) transItens["Motorista habilitado"]++;
+        }
+        let transPercent = {};
+        for(let [k,v] of Object.entries(transItens)) {
+            transPercent[k] = allSchools.length ? (v/allSchools.length*100).toFixed(1) : 0;
+        }
+        if(charts.transporteItens) charts.transporteItens.destroy();
+        let ctxTransItens = document.getElementById('chartTransporteItens');
+        if(ctxTransItens) {
+            charts.transporteItens = new Chart(ctxTransItens, { type: 'bar', data: { labels: Object.keys(transPercent), datasets: [{ data: Object.values(transPercent), backgroundColor: '#e67e22' }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: true, scales: { x: { max: 100, title: { display: true, text: '% de escolas com problema' } } }, plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.raw}%` } }, datalabels: { anchor: 'end', align: 'right', formatter: (v) => `${v}%`, font: { weight: 'bold' } } } } });
+        }
+        
+        // Alimentação
+        let alimOferta = {}, alimQuant = {}, alimOrg = {}, alimAgric = {}, alimCult = {};
+        for(let s of allSchools) {
+            if(s.alimentacaoOferta) alimOferta[s.alimentacaoOferta] = (alimOferta[s.alimentacaoOferta]||0)+1;
+            if(s.alimentacaoQuantidade) alimQuant[s.alimentacaoQuantidade] = (alimQuant[s.alimentacaoQuantidade]||0)+1;
+            if(s.alimentacaoOrganicos) alimOrg[s.alimentacaoOrganicos] = (alimOrg[s.alimentacaoOrganicos]||0)+1;
+            if(s.alimentacaoAgricultura) alimAgric[s.alimentacaoAgricultura] = (alimAgric[s.alimentacaoAgricultura]||0)+1;
+            if(s.alimentacaoCultura) alimCult[s.alimentacaoCultura] = (alimCult[s.alimentacaoCultura]||0)+1;
+        }
+        buildPercentBarChart('chartAlimentacaoOferta', alimOferta, 'Oferta', '#27ae60');
+        buildPercentBarChart('chartAlimentacaoQuantidade', alimQuant, 'Quantidade', '#2ecc71');
+        buildPercentBarChart('chartAlimentacaoOrganicos', alimOrg, 'Orgânicos', '#16a085');
+        buildPercentBarChart('chartAlimentacaoAgricultura', alimAgric, 'Agricultura familiar', '#1abc9c');
+        buildPercentBarChart('chartAlimentacaoCultura', alimCult, 'Cultura alimentar', '#8e44ad');
+        
+        // Racismo
+        let racCount = {};
+        for(let s of allSchools) { racCount[s.racismo] = (racCount[s.racismo]||0)+1; }
+        buildPercentPieChart('chartRacismo', racCount);
+        
+        // Conteúdo quilombola
+        let contCount = {};
+        for(let s of allSchools) { if(s.conteudoQuilombola) contCount[s.conteudoQuilombola] = (contCount[s.conteudoQuilombola]||0)+1; }
+        buildPercentPieChart('chartConteudoQuilombola', contCount);
+        
+        // Professores quilombolas
+        let profCount = {};
+        for(let s of allSchools) { if(s.professoresQuilombolas) profCount[s.professoresQuilombolas] = (profCount[s.professoresQuilombolas]||0)+1; }
+        buildPercentPieChart('chartProfessoresQuilombolas', profCount);
+        
+        // Participação
+        let consultaCount = {}, conselhoCount = {}, gestoresCount = {};
+        for(let s of allSchools) {
+            if(s.participacaoConsulta) consultaCount[s.participacaoConsulta] = (consultaCount[s.participacaoConsulta]||0)+1;
+            if(s.participacaoConselho) conselhoCount[s.participacaoConselho] = (conselhoCount[s.participacaoConselho]||0)+1;
+            if(s.participacaoGestores) gestoresCount[s.participacaoGestores] = (gestoresCount[s.participacaoGestores]||0)+1;
+        }
+        buildPercentPieChart('chartConsulta', consultaCount);
+        buildPercentPieChart('chartConselho', conselhoCount);
+        buildPercentPieChart('chartGestores', gestoresCount);
+        
+        // Avaliação
+        let avCount = {};
+        filteredData.forEach(r=>{ let av=getAvaliacao(r); avCount[av]=(avCount[av]||0)+1; });
+        buildPercentPieChart('chartAvaliacao', avCount);
+    }
+    
+    function updateInferences() {
+        // Racismo x Fechamento
+        let comRacismoFechou = filteredData.filter(r=> getRacismo(r)==="Sim" && getFechamento(r)==="Sim").length;
+        let comRacismoTotal = filteredData.filter(r=> getRacismo(r)==="Sim").length;
+        let semRacismoFechou = filteredData.filter(r=> getRacismo(r)==="Não" && getFechamento(r)==="Sim").length;
+        let semRacismoTotal = filteredData.filter(r=> getRacismo(r)==="Não").length;
+        let percRac = comRacismoTotal ? (comRacismoFechou/comRacismoTotal*100).toFixed(1) : 0;
+        let percSem = semRacismoTotal ? (semRacismoFechou/semRacismoTotal*100).toFixed(1) : 0;
+        document.getElementById('inferencia1').innerHTML = `<p>📍 Com relatos de racismo: <strong>${percRac}%</strong> tiveram fechamento.<br>📍 Sem relatos de racismo: <strong>${percSem}%</strong> tiveram fechamento.<br>${percRac > percSem ? '📌 Os dados sugerem correlação entre racismo e fechamento escolar.' : '📌 Não há diferença expressiva.'}</p>`;
+        
+        // Transporte precário x Evasão
+        let transporteRuim = allSchools.filter(s=>isTransporteRuim(s.transporteSeguro)||isTransporteRuim(s.transporteVeiculo)||isTransporteRuim(s.transporteEstradas));
+        let evasaoRuim = transporteRuim.filter(s=>s.evasao==="Sim").length;
+        let percRuimEvasao = transporteRuim.length ? (evasaoRuim/transporteRuim.length*100).toFixed(1) : 0;
+        let transporteBom = allSchools.filter(s=>!isTransporteRuim(s.transporteSeguro)&&!isTransporteRuim(s.transporteVeiculo)&&!isTransporteRuim(s.transporteEstradas));
+        let evasaoBom = transporteBom.filter(s=>s.evasao==="Sim").length;
+        let percBomEvasao = transporteBom.length ? (evasaoBom/transporteBom.length*100).toFixed(1) : 0;
+        document.getElementById('inferencia2').innerHTML = `<p>🚛 Transporte precário: <strong>${percRuimEvasao}%</strong> param de estudar.<br>✅ Transporte adequado: <strong>${percBomEvasao}%</strong> param de estudar.<br>${percRuimEvasao > percBomEvasao ? '⚠️ Transporte precário está associado a maior evasão.' : '⚠️ Outros fatores influenciam mais a evasão.'}</p>`;
+        
+        // Oferta EM x Evasão
+        let semEM = filteredData.filter(r=> getOfertaEM(r)==="Não");
+        let evasaoSemEM = semEM.filter(r=> getEvasao(r)==="Sim").length;
+        let percSemEM = semEM.length ? (evasaoSemEM/semEM.length*100).toFixed(1) : 0;
+        let comEM = filteredData.filter(r=> getOfertaEM(r)==="Sim");
+        let evasaoComEM = comEM.filter(r=> getEvasao(r)==="Sim").length;
+        let percComEM = comEM.length ? (evasaoComEM/comEM.length*100).toFixed(1) : 0;
+        document.getElementById('inferencia3').innerHTML = `<p>🎓 Sem oferta de EM: <strong>${percSemEM}%</strong> param de estudar.<br>✅ Com oferta de EM: <strong>${percComEM}%</strong> param de estudar.<br>${percSemEM > percComEM ? '📌 Falta de Ensino Médio aumenta evasão.' : '📌 Outros fatores são mais determinantes.'}</p>`;
+    }
+    
+    function updateTable() {
+        let tbody = document.querySelector('#dadosTable tbody');
+        if(!filteredData.length) { tbody.innerHTML = '<tr><td colspan="4">Nenhum dado com os filtros atuais.<tr></tr>'; return; }
+        let rows = filteredData.slice(0, 50).map(r => `
+            <tr>
+                <td>${(getComunidade(r) || "Não informado").substring(0, 60)}</td>
+                <td>${getUF(r)}</td>
+                <td><strong>${getRacismo(r)}</strong><br><small>${(getRelatoRacismo(r) || "").substring(0, 100)}</small></td>
+                <td><small>${(getSugestoes(r) || "").substring(0, 150)}</small></td>
+            </tr>
+        `).join('');
+        tbody.innerHTML = rows;
+    }
+    
+    function exportFilteredCSV() {
+        if(!filteredData.length) { alert("Sem dados para exportar."); return; }
+        let headers = ["Comunidade","UF","Região","Racismo","Fechamento escola","Oferta EM","Evasão"];
+        let rows = filteredData.map(r => [getComunidade(r), getUF(r), getRegiao(r), getRacismo(r), getFechamento(r), getOfertaEM(r), getEvasao(r)]);
+        let csvContent = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+        let blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+        let link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `observatorio_quilombola_${new Date().toISOString().slice(0,19)}.csv`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+    }
+    
+    exportCSVBtn.addEventListener('click', exportFilteredCSV);
+    resetBtn.addEventListener('click', () => {
+        filterRegiao.value = "all"; filterUF.value = "all"; filterRacismo.value = "all";
+        filterFechamento.value = "all"; filterEM.value = "all";
+        applyFilters();
+    });
+    filterRegiao.addEventListener('change', applyFilters);
+    filterUF.addEventListener('change', applyFilters);
+    filterRacismo.addEventListener('change', applyFilters);
+    filterFechamento.addEventListener('change', applyFilters);
+    filterEM.addEventListener('change', applyFilters);
+    
+    loadData();
+</script>
+</body>
+</html>
