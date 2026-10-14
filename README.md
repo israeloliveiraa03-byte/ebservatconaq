@@ -6,7 +6,7 @@ planilha do Google, tira os dados pessoais, gera um `index.html` novo e o public
 no GitHub Pages.
 
 ```
-planilha do Google  ──(todo dia, 6h)──►  GitHub Actions roda atualizar_dados.py
+planilha do Google  ──(6h, 12h e 23h)──►  GitHub Actions roda atualizar_dados.py
  (respostas do form)                       │  lê a planilha
                                            │  tira nome, e-mail, nascimento, escola…
                                            │  agrupa categorias pequenas
@@ -62,7 +62,7 @@ foram reconhecidos.
 
 ## O dia a dia
 
-- **Não há nada a fazer.** Todo dia às 6h o painel se atualiza. Quer ver uma
+- **Não há nada a fazer.** O painel se atualiza três vezes por dia (6h, 12h e 23h, horário de Brasília). Quer ver uma
   resposta nova antes disso? *Actions → Atualizar painel → Run workflow*.
 - **Se der erro**, o GitHub manda um e-mail e o painel publicado **continua o de
   ontem**. O script nunca publica uma página pela metade. Os erros mais comuns:
