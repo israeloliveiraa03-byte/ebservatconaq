@@ -38,12 +38,14 @@ O QUE ESTE SCRIPT FAZ COM OS DADOS PESSOAIS
 A página é pública. Então o script decide, coluna por coluna, o que sai:
 
   NUNCA saem       nome, e-mail, data de nascimento, horário de envio, nome da
-                   escola, município de cada pessoa, tipo de deficiência, motivo
-                   de abandono, monitora pedagógica e todas as respostas abertas.
+                   escola, tipo de deficiência, motivo de abandono, monitora
+                   pedagógica e todas as respostas abertas.
   saem RESUMIDAS   data de nascimento → faixa etária; horário de envio → total
-                   de respostas por dia; município → contagem por município no
-                   mapa (sem ligação com as respostas); deficiência e abandono →
-                   só o total nacional.
+                   de respostas por dia; deficiência e abandono → só o total
+                   nacional.
+  saem por pessoa  o município (da comunidade e da escola), já reconhecido e
+                   convertido no centro do município, para o mapa seguir os
+                   filtros (decisão da equipe, out/2026).
   saem por pessoa  as respostas fechadas (de escolha), sem nada que identifique
                    quem respondeu, para alimentar filtros e cruzamentos.
 
@@ -673,23 +675,33 @@ def acha_municipio(texto, uf, por_uf):
     return None
 
 
-def conta_municipios(linhas, iuf, imun, por_uf, rotulo):
-    cont, sem = {}, Counter()
+def municipio_de_cada(linhas, iuf, imun, por_uf, rotulo, lista, posicao):
+    """
+    Para cada resposta, o índice do município numa lista única (ou -1 se não deu
+    para reconhecer). A página usa esses índices para redesenhar o mapa conforme
+    os filtros: ela conta, entre as respostas do recorte, quantas há em cada
+    município. 'lista' e 'posicao' são compartilhadas entre comunidade e escola,
+    para os dois mapas usarem o mesmo cadastro de municípios.
+    """
+    indices, sem = [], Counter()
     for l in linhas:
         uf = uf_de(l[iuf]) if iuf is not None and iuf < len(l) else None
         txt = l[imun] if imun is not None and imun < len(l) else ''
         m = acha_municipio(txt, uf, por_uf) if uf else None
         if m is None:
             sem[f"{txt.strip()[:60]} ({uf or '?'})"] += 1
+            indices.append(-1)
             continue
-        c = cont.setdefault(m['ibge'], {'nome': m['nome'], 'uf': uf, 'lat': m['lat'], 'lon': m['lon'], 'n': 0})
-        c['n'] += 1
+        if m['ibge'] not in posicao:
+            posicao[m['ibge']] = len(lista)
+            lista.append({'nome': m['nome'], 'uf': uf, 'lat': m['lat'], 'lon': m['lon']})
+        indices.append(posicao[m['ibge']])
     if sem:
         print(f"AVISO: {sum(sem.values())} resposta(s) com {rotulo} não identificado (ficam fora do mapa). "
               "Para corrigir, acrescente em MUNICIPIO_APELIDOS:")
         for k, v in sem.most_common():
             print(f"  - {k} ×{v}")
-    return sorted(cont.values(), key=lambda c: -c['n']), sum(sem.values())
+    return indices, sum(sem.values())
 
 
 # ----------------------------------------------------------------------
@@ -904,7 +916,7 @@ def gera_pagina(pacote, saida):
         '__DATA_GERACAO__': pacote['gerado'],
         '__TOTAL_RESPOSTAS__': f"{pacote['n']:,}".replace(',', '.'),
         '__TOTAL_UFS__': str(r['ufs']),
-        '__TOTAL_MUNICIPIOS__': str(len(pacote['mapa']['comunidade'])),
+        '__TOTAL_MUNICIPIOS__': str(len({i for i in pacote['mapa']['comunidade'] if i >= 0})),
         '__PERIODO__': f"{fmt_data(r['primeira'])} a {fmt_data(r['ultima'])}",
         '__MINIMO_GRUPO__': str(MINIMO_GRUPO),
     }
@@ -975,10 +987,11 @@ def main():
         registros = monta_registros(cabecalho, dados, indice)
 
         por_uf = carrega_municipios()
-        mapa_com, sem_com = conta_municipios(dados, indice.get('ufComunidade'), indice.get('municipioComunidade'),
-                                             por_uf, "município da comunidade")
-        mapa_esc, sem_esc = conta_municipios(dados, indice.get('ufEscola'), indice.get('municipioEscola'),
-                                             por_uf, "município da escola")
+        municipios, posicao = [], {}
+        mapa_com, sem_com = municipio_de_cada(dados, indice.get('ufComunidade'), indice.get('municipioComunidade'),
+                                              por_uf, "município da comunidade", municipios, posicao)
+        mapa_esc, sem_esc = municipio_de_cada(dados, indice.get('ufEscola'), indice.get('municipioEscola'),
+                                              por_uf, "município da escola", municipios, posicao)
         ufs_reais = {r['uf'] for r in registros if r['uf']}
         res = resumo(registros, dados, ufs_reais)
 
@@ -997,7 +1010,7 @@ def main():
             'colunas': colunas,
             'agregados': agregados,
             'resumo': res,
-            'mapa': {'comunidade': mapa_com, 'escola': mapa_esc,
+            'mapa': {'municipios': municipios, 'comunidade': mapa_com, 'escola': mapa_esc,
                      'semLocalComunidade': sem_com, 'semLocalEscola': sem_esc},
         }
         gera_pagina(pacote, args.saida)

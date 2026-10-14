@@ -98,7 +98,7 @@ Por isso, renumerar ou reordenar o formulário não quebra nada.
 | Nome, e-mail, nome da escola, monitora, respostas escritas | **Nunca** |
 | Data de nascimento | Só como faixa etária, e só no total da base |
 | Horário de envio | Só como nº de respostas por dia |
-| Município (da comunidade e da escola) | Só como contagem no mapa, sem ligação com as respostas |
+| Município (da comunidade e da escola) | Por resposta, para o mapa acompanhar os filtros (posição = centro do município) |
 | Deficiência e abandono escolar | Só o total da base, sem o tipo nem o motivo |
 | Faixa etária, turno, trabalho | Só o total da base (não filtram nem cruzam) |
 | UF, gênero, raça/cor, série | Por resposta, com categorias de menos de 5 pessoas agrupadas |
