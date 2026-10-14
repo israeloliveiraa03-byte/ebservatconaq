@@ -129,6 +129,9 @@
     .leaflet-popup-content{font-family:var(--fonte);font-size:14px;margin:12px 14px;line-height:1.5}
     .leaflet-popup-content strong{color:var(--verde-escuro);font-size:15px}
     .leaflet-popup-tip,.leaflet-popup-content-wrapper{background:var(--creme);border-radius:2px}
+    .popup-escolas{margin-top:8px;font-size:13.5px}
+    .popup-escolas ul{margin:4px 0 6px 18px;max-height:180px;overflow-y:auto;padding-right:4px}
+    .popup-escolas li{margin-bottom:3px;line-height:1.35}
     .ponto-tooltip{background:var(--verde-escuro);color:#fff;border:none;font-family:var(--fonte);font-size:12px;padding:3px 8px;box-shadow:none}
     .ponto-tooltip::before{border-top-color:var(--verde-escuro)!important}
 
@@ -268,7 +271,7 @@
         <div class="secao-cabecalho"><div>
             <div class="rotulo">De onde vêm as vozes</div>
             <h2>Andamento da escuta e territórios</h2>
-            <p class="descricao">À esquerda, quantas respostas chegaram a cada dia, sempre para a base inteira. À direita, os municípios das comunidades (ou das escolas) de quem respondeu. O mapa acompanha os filtros: escolha, por exemplo, <em>Identidade de gênero: Feminino</em> para ver de onde vêm as respostas das meninas. Os círculos são maiores quanto mais respostas o município reúne.</p>
+            <p class="descricao">À esquerda, quantas respostas chegaram a cada dia, sempre para a base inteira. À direita, os municípios das comunidades (ou das escolas) de quem respondeu. O mapa acompanha os filtros: escolha, por exemplo, <em>Identidade de gênero: Feminino</em> para ver de onde vêm as respostas das meninas. Os círculos são maiores quanto mais respostas o município reúne. Clique num círculo para ver os nomes das escolas.</p>
         </div></div>
         <div class="coleta-grid">
             <div>
@@ -284,7 +287,7 @@
                 <p class="nota-metodo" id="notaMapa"></p>
             </div>
         </div>
-        <div class="caixa-aviso"><strong class="titulo">Como ler o mapa</strong>O município foi escrito à mão no formulário e reconhecido automaticamente. Quando o texto não permitiu reconhecer o município, a resposta fica fora do mapa, mas continua nos gráficos. A posição de cada círculo é o centro (centróide) do município, nunca o endereço da comunidade ou da escola.</div>
+        <div class="caixa-aviso"><strong class="titulo">Como ler o mapa</strong>O município foi escrito à mão no formulário e reconhecido automaticamente. Quando o texto não permitiu reconhecer o município, a resposta fica fora do mapa, mas continua nos gráficos. A posição de cada círculo é o centro (centróide) do município, nunca o endereço da comunidade ou da escola. Clique num círculo para ver as escolas citadas: os nomes também foram escritos à mão, e as grafias diferentes da mesma escola foram juntadas automaticamente.</div>
     </div>
 </section>
 
@@ -334,7 +337,7 @@
             <div class="fontes-texto">
                 <p><strong>De onde vêm os dados.</strong> As respostas são do formulário <em>Diagnóstico da Educação Escolar Quilombola – ENFMQ</em>, respondido por estudantes quilombolas. Todo dia, de madrugada, uma rotina automática baixa a planilha de respostas, tira os dados pessoais, organiza as respostas e gera esta página de novo. A data no topo mostra quando isso aconteceu pela última vez. Não há estimativa: cada número é uma contagem das respostas recebidas.</p>
                 <p><strong>Quem está (e quem não está) aqui.</strong> O diagnóstico é uma escuta, não uma amostra estatística. Ele mostra o que disseram as pessoas que responderam, e a participação depende da mobilização em cada território. Por isso os números não devem ser lidos como “a realidade de todas as escolas quilombolas do estado”. Eles valem como a voz de quem participou.</p>
-                <p><strong>O que nunca é publicado.</strong> Nome, e-mail, data de nascimento, horário de envio, nome da escola, tipo de deficiência, motivo de abandono escolar, monitora pedagógica e todas as respostas escritas (as dificuldades com transporte e as violações de direitos relatadas). Elas ficam na planilha, de acesso da equipe, para a leitura qualitativa.</p>
+                <p><strong>O que nunca é publicado.</strong> Nome, e-mail, data de nascimento, horário de envio, tipo de deficiência, motivo de abandono escolar, monitora pedagógica e todas as respostas escritas (as dificuldades com transporte e as violações de direitos relatadas). Elas ficam na planilha, de acesso da equipe, para a leitura qualitativa.</p>
                 <p><strong>O que é publicado só como total.</strong> Faixa etária, turno, trabalho fora da escola, deficiência e abandono escolar aparecem como totais da base inteira. Eles não mudam com os filtros e não entram no cruzador. Somados a estado, gênero e série, permitiriam reconhecer uma pessoa.</p>
                 <div class="caixa-aviso"><strong class="titulo">Como ler as perguntas</strong>As perguntas de escala (de 0 a 5 ou de 1 a 5) são mostradas com a nota média e a distribuição das notas. As de múltipla escolha somam mais de 100%, porque cada pessoa podia marcar várias opções. Nelas, o percentual é sobre quem respondeu à pergunta. Respostas escritas no campo “Outro” foram lidas e colocadas na categoria correspondente quando era possível (por exemplo, “38 minutos” entrou em “Menos de 1 hora”). As que não se encaixavam ficaram como “Outra resposta”.</div>
             </div>
@@ -704,13 +707,13 @@ function renderMapa(){
   const cont = new Map();
   let sem = 0;
   visiveis.forEach(r => { const i = idx[r._i]; if (i == null || i < 0) sem++; else cont.set(i, (cont.get(i) || 0) + 1); });
-  const lista = [...cont.entries()].map(([i, n]) => Object.assign({n}, muns[i])).sort((a, b) => b.n - a.n);
+  const lista = [...cont.entries()].map(([i, n]) => Object.assign({n, idx:i}, muns[i])).sort((a, b) => b.n - a.n);
   // raio pela raiz quadrada: é a ÁREA do círculo que cresce com o nº de respostas
   const maior = Math.max(1, ...lista.map(m => m.n));
   lista.forEach(m => {
     const c = L.circleMarker([m.lat, m.lon], {radius:5 + 14*Math.sqrt(m.n/maior), weight:2, color:'#FBF6EA', fillColor:COR_BARRA, fillOpacity:.75});
     c.bindTooltip(`${esc(m.nome)} (${m.uf}) · ${fmt(m.n)} resposta(s)`, {className:'ponto-tooltip'});
-    c.bindPopup(`<strong>${esc(m.nome)} (${m.uf})</strong><br>${fmt(m.n)} resposta(s) do recorte atual, de estudantes ${qual==='comunidade'?'de comunidades deste município':'de escolas deste município'}.<br><span style="color:#6E624F;font-size:12.5px">Posição: centro do município.</span>`);
+    c.bindPopup(() => popupMunicipio(m, qual), {maxWidth:340});
     camada.addLayer(c);
   });
   try { const b = camada.getBounds(); if (b.isValid()) mapa.fitBounds(b, {padding:[24,24], maxZoom:7}); } catch(e){}
@@ -718,6 +721,28 @@ function renderMapa(){
   $('notaMapa').textContent = !visiveis.length ? 'Nenhuma resposta no recorte atual.' :
     `${fmt(lista.length)} municípios, ${fmt(total)} respostas do recorte atual no mapa.` +
     (sem ? ` ${fmt(sem)} resposta(s) não entram no mapa porque o município escrito no formulário não foi reconhecido.` : '');
+}
+
+/* Ao clicar num município: as escolas citadas pelas respostas do recorte atual.
+   No modo "comunidade", são as escolas onde estudam as pessoas daquela comunidade
+   (que podem ficar em outro município); no modo "escola", as escolas do município.
+   Os nomes foram escritos à mão no formulário; o script junta as grafias
+   diferentes da mesma escola e mostra a mais usada. */
+function popupMunicipio(m, qual){
+  const idx = P.mapa[qual] || [], escDe = P.mapa.escolaDe || [], nomes = P.mapa.escolas || [];
+  const cont = new Map(); let semNome = 0;
+  visiveis.forEach(r => {
+    if (idx[r._i] !== m.idx) return;
+    const e = escDe[r._i];
+    if (e == null || e < 0) semNome++; else cont.set(e, (cont.get(e) || 0) + 1);
+  });
+  const itens = [...cont.entries()].sort((a, b) => b[1] - a[1] || nomes[a[0]].localeCompare(nomes[b[0]], 'pt-BR'))
+    .map(([e, n]) => `<li>${esc(nomes[e])} <span style="color:#6E624F">(${fmt(n)})</span></li>`).join('');
+  const titulo = qual === 'comunidade' ? 'Escolas onde estudam' : 'Escolas citadas';
+  return `<strong>${esc(m.nome)} (${m.uf})</strong><br>${fmt(m.n)} resposta(s) no recorte atual` +
+    (itens ? `<div class="popup-escolas"><b>${titulo}</b><ul>${itens}</ul></div>` : '') +
+    (semNome ? `<div style="color:#6E624F;font-size:12.5px">${fmt(semNome)} resposta(s) sem nome de escola.</div>` : '') +
+    `<div style="color:#6E624F;font-size:12.5px;margin-top:4px">Nomes como escritos no formulário · posição: centro do município.</div>`;
 }
 
 /* ==================== CRUZADOR ==================== */

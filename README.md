@@ -95,7 +95,8 @@ Por isso, renumerar ou reordenar o formulário não quebra nada.
 
 | O quê | Como sai |
 |---|---|
-| Nome, e-mail, nome da escola, monitora, respostas escritas | **Nunca** |
+| Nome, e-mail, monitora, respostas escritas | **Nunca** |
+| Nome da escola | Por resposta, aparece ao clicar no mapa (grafias da mesma escola agrupadas) |
 | Data de nascimento | Só como faixa etária, e só no total da base |
 | Horário de envio | Só como nº de respostas por dia |
 | Município (da comunidade e da escola) | Por resposta, para o mapa acompanhar os filtros (posição = centro do município) |

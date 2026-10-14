@@ -37,15 +37,17 @@ O QUE ESTE SCRIPT FAZ COM OS DADOS PESSOAIS
 --------------------------------------------------------------------------------
 A página é pública. Então o script decide, coluna por coluna, o que sai:
 
-  NUNCA saem       nome, e-mail, data de nascimento, horário de envio, nome da
-                   escola, tipo de deficiência, motivo de abandono, monitora
-                   pedagógica e todas as respostas abertas.
+  NUNCA saem       nome, e-mail, data de nascimento, horário de envio, tipo de
+                   deficiência, motivo de abandono, monitora pedagógica e todas
+                   as respostas abertas.
   saem RESUMIDAS   data de nascimento → faixa etária; horário de envio → total
                    de respostas por dia; deficiência e abandono → só o total
                    nacional.
   saem por pessoa  o município (da comunidade e da escola), já reconhecido e
                    convertido no centro do município, para o mapa seguir os
-                   filtros (decisão da equipe, out/2026).
+                   filtros (decisão da equipe, out/2026). Junto vai o nome da
+                   escola, com as grafias diferentes da mesma escola agrupadas
+                   (ver agrupa_escolas), para aparecer ao clicar no mapa.
   saem por pessoa  as respostas fechadas (de escolha), sem nada que identifique
                    quem respondeu, para alimentar filtros e cruzamentos.
 
@@ -132,6 +134,8 @@ MUNICIPIO_APELIDOS = {
 #   tipo   'unica'    uma resposta por pessoa
 #          'escala'   nota numérica (de 'min' a 'max')
 #          'multipla' caixas de seleção: a pessoa pode marcar várias
+#   rotulos  (só nas escalas) o que cada nota quer dizer, do menor ao maior número.
+#          Aparece ao lado do número nas legendas: "4 – Com frequência".
 #   ordem  a ordem das categorias no gráfico. Para 'unica', uma resposta fora da
 #          lista vira 'Outra resposta' (é o "Outro: ___" do formulário).
 #   tons   a cor de cada categoria, uma letra por categoria, na mesma ordem:
@@ -214,6 +218,7 @@ PERGUNTAS = [
          tons='cccccccc'),
     dict(k='avaliacaoTransporte', acha='avalia o transporte', tipo='escala', bloco='acesso',
          rot='Avaliação do transporte escolar', min=1, max=5, polaridade=1,
+         rotulos=['Muito ruim', 'Ruim', 'Regular', 'Bom', 'Muito bom'],
          extremos=('pior avaliação', 'melhor avaliação')),
     dict(k='tempoTransporte', acha='tempo voce passa no transporte', tipo='unica', bloco='acesso',
          rot='Tempo de deslocamento até a escola',
@@ -223,9 +228,11 @@ PERGUNTAS = [
     # ---------------- Estrutura da escola ----------------
     dict(k='acessibilidade', acha='acessibilidade para todos', tipo='escala', bloco='estrutura',
          rot='Acessibilidade da escola para todos os alunos', min=0, max=5, polaridade=1,
+         rotulos=['Nenhuma acessibilidade', 'Muito pouca', 'Pouca', 'Razoável', 'Boa', 'Acessibilidade plena'],
          extremos=('menos acessível', 'mais acessível')),
     dict(k='merenda', acha='qualidade da merenda', tipo='escala', bloco='estrutura',
          rot='Qualidade da merenda escolar', min=1, max=5, polaridade=1,
+         rotulos=['Muito ruim', 'Ruim', 'Regular', 'Boa', 'Muito boa'],
          extremos=('pior qualidade', 'melhor qualidade')),
     dict(k='alimentacaoLocal', acha='alimentacao escolar inclui', tipo='unica', bloco='estrutura',
          rot='A alimentação escolar usa produção quilombola do território',
@@ -294,9 +301,11 @@ PERGUNTAS = [
          ordem=['Sempre', 'Muitas vezes', 'Às vezes', 'Raramente', 'Nunca', NS], tons='Pp0nN?'),
     dict(k='racismoFrequencia', acha='presencia situacoes de racismo', tipo='escala', bloco='racismo',
          rot='Com que frequência presencia racismo ou discriminação na escola', min=0, max=5, polaridade=-1,
+         rotulos=['Nunca', 'Muito raramente', 'Raramente', 'Às vezes', 'Com frequência', 'Muito frequentemente'],
          extremos=('menos frequente', 'mais frequente')),
     dict(k='igualdadeMeninas', acha='mesmas oportunidades que os meninos', tipo='escala', bloco='racismo',
          rot='Meninas quilombolas têm as mesmas oportunidades que os meninos', min=0, max=5, polaridade=1,
+         rotulos=['Nenhuma igualdade', 'Muito pouca', 'Pouca', 'Parcial', 'Grande', 'Igualdade plena'],
          extremos=('menos igualdade', 'mais igualdade')),
     dict(k='participacaoDecisoes', acha='participa das decisoes', tipo='unica', bloco='racismo',
          rot='A comunidade participa das decisões sobre a escola',
@@ -332,13 +341,14 @@ COLUNAS_APOIO = {
     # cabeçalho já normalizado ("4 estado"), para não confundir com as da comunidade.
     'ufEscola': r'^\d+ estado$',
     'municipioEscola': r'^\d+ municipio$',
+    'escola': 'nome da escola',
     'deficiencia': 'possui algum tipo de deficiencia',
     'abandono': 'precisou abandonar a escola',
 }
 # Colunas que o script reconhece e descarta de propósito. Estão listadas só para
 # o log não avisar "coluna nova" toda vez. Nenhuma delas é lida.
 COLUNAS_DESCARTADAS = ['endereco de e-mail', 'nome completo', 'se respondeu sim, qual', 'em qual ano precisou',
-                       'por qual motivou', 'nome da escola', 'descreva qual o tipo de dificuldade',
+                       'por qual motivou', 'descreva qual o tipo de dificuldade',
                        'violacao de direitos', 'monitora pedagogica']
 
 BLOCOS = OrderedDict([
@@ -708,6 +718,83 @@ def municipio_de_cada(linhas, iuf, imun, por_uf, rotulo, lista, posicao):
 
 
 # ----------------------------------------------------------------------
+# NOMES DAS ESCOLAS (aparecem ao clicar num município do mapa)
+# ----------------------------------------------------------------------
+# Palavras que quase toda escola tem no nome e que, por isso, não ajudam a dizer
+# se dois nomes escritos à mão são a mesma escola.
+PALAVRAS_GENERICAS = {'escola', 'colegio', 'estadual', 'municipal', 'de', 'da', 'do', 'das', 'dos', 'e',
+                      'em', 'ee', 'eem', 'eemti', 'professora', 'professor', 'prof', 'tempo', 'integral',
+                      'anexo', 'anexas', 'salas'}
+
+
+def _tokens_escola(nome):
+    return {t for t in normaliza(nome).replace('/', ' ').split()
+            if t not in PALAVRAS_GENERICAS and len(t) > 1 and not t.isdigit()}
+
+
+def _bonito(nome):
+    """Arruma espaços e pontuação final; nome TODO EM MAIÚSCULAS vira 'Nome Assim'."""
+    n = re.sub(r'\s+', ' ', nome).strip()
+    # comentários que vieram junto do nome ("..., atualmente estou na faculdade X")
+    n = re.sub(r',?\s*atualmente\b.*$', '', n, flags=re.I)
+    n = re.sub(r'^n[aã]o [ée] em territ[oó]rio quilombola\s*[,.:-]?\s*', '', n, flags=re.I)
+    n = n.rstrip('.').strip()
+    if n.isupper():
+        minusculas = {'de', 'da', 'do', 'das', 'dos', 'e', 'em'}
+        n = ' '.join(p.lower() if p.lower() in minusculas else p.capitalize() for p in n.lower().split())
+    return n[:110]
+
+
+def agrupa_escolas(linhas, iesc, mun_escola, iuf):
+    """
+    O nome da escola é escrito à mão, então a mesma escola aparece de vários
+    jeitos: "Zuleide Freire de Abreu", "Zuleide freire de abrel anexo 1",
+    "C.E.Q.B.I Colégio estadual quilombola da bacia do Iguape"...
+
+    Para cada município, comparamos os nomes pelas palavras que sobram depois
+    de tirar as genéricas (escola, colégio, estadual, de, da…). Dois nomes são
+    a mesma escola quando pelo menos 60% das palavras do nome menor estão no
+    maior. Exemplo: {bacia, iguape} está inteiro dentro de {quilombola, bacia,
+    vale, iguape}. O nome exibido é a grafia mais usada no grupo.
+
+    Devolve a lista de escolas (nomes exibidos) e, para cada resposta, o índice
+    da escola nessa lista (-1 se o campo veio vazio).
+    """
+    grupos = []          # cada grupo: {'chave': (município ou UF), 'tokens': set, 'grafias': Counter}
+    de_cada = []
+    for i, l in enumerate(linhas):
+        bruto = (l[iesc] if iesc is not None and iesc < len(l) else '').strip()
+        if len(re.sub(r'\W', '', bruto)) < 3:
+            de_cada.append(None)
+            continue
+        mun = mun_escola[i] if i < len(mun_escola) else -1
+        chave = mun if mun >= 0 else 'uf:' + (uf_de(l[iuf]) if iuf is not None and iuf < len(l) else '?')
+        toks = _tokens_escola(bruto) or {normaliza(bruto)}
+        achou = None
+        for g in grupos:
+            if g['chave'] != chave:
+                continue
+            menor, maior = sorted((toks, g['tokens']), key=len)
+            if len(menor & maior) / len(menor) >= 0.6:
+                achou = g
+                break
+        if achou is None:
+            achou = {'chave': chave, 'tokens': set(toks), 'grafias': Counter()}
+            grupos.append(achou)
+        else:
+            achou['tokens'] |= toks
+        achou['grafias'][_bonito(bruto)] += 1
+        de_cada.append(achou)
+    # a grafia mais usada; no empate, a mais curta (costuma ser a sem "anexo", "-BA"…)
+    nomes = [max(g['grafias'].items(), key=lambda x: (x[1], -len(x[0])))[0] for g in grupos]
+    posicao = {id(g): k for k, g in enumerate(grupos)}
+    indices = [posicao[id(g)] if g is not None else -1 for g in de_cada]
+    print(f"Escolas: {sum(1 for x in indices if x >= 0)} respostas com nome de escola, "
+          f"agrupadas em {len(nomes)} escolas.")
+    return nomes, indices
+
+
+# ----------------------------------------------------------------------
 # ANONIMATO
 # ----------------------------------------------------------------------
 NAO_DIVULGADO = 'Grupo pequeno (não divulgado)'
@@ -816,6 +903,10 @@ def vars_do_painel():
                                'opcoes', 'min', 'max', 'polaridade', 'extremos') if x in p}
         if p['tipo'] == 'escala':
             m['ordem'] = [str(i) for i in range(p['min'], p['max'] + 1)]
+            # "4 – Com frequência": o número que a pessoa marcou e o que ele quer
+            # dizer. A ordem (só o número) continua sendo usada para a média.
+            if p.get('rotulos'):
+                m['curtos'] = [f"{n} – {r}" for n, r in zip(m['ordem'], p['rotulos'])]
         if p['tipo'] == 'multipla':
             extras = [nome for _, nome in p.get('livres', []) if nome] + [OUTRA]
             m['ordem'] = p['opcoes'] + [e for e in extras if e not in p['opcoes']]
@@ -995,6 +1086,7 @@ def main():
                                               por_uf, "município da comunidade", municipios, posicao)
         mapa_esc, sem_esc = municipio_de_cada(dados, indice.get('ufEscola'), indice.get('municipioEscola'),
                                               por_uf, "município da escola", municipios, posicao)
+        escolas, escola_de = agrupa_escolas(dados, indice.get('escola'), mapa_esc, indice.get('ufEscola'))
         ufs_reais = {r['uf'] for r in registros if r['uf']}
         res = resumo(registros, dados, ufs_reais)
 
@@ -1015,6 +1107,7 @@ def main():
             'agregados': agregados,
             'resumo': res,
             'mapa': {'municipios': municipios, 'comunidade': mapa_com, 'escola': mapa_esc,
+                     'escolas': escolas, 'escolaDe': escola_de,
                      'semLocalComunidade': sem_com, 'semLocalEscola': sem_esc},
         }
         gera_pagina(pacote, args.saida)
