@@ -2,8 +2,8 @@
 
 Painel público com as respostas do formulário *Diagnóstico da Educação Escolar
 Quilombola – ENFMQ* (CONAQ). A página se atualiza sozinha todo dia: o GitHub lê a
-planilha do Google, tira os dados pessoais e gera um `index.html` novo, que a
-Vercel publica.
+planilha do Google, tira os dados pessoais, gera um `index.html` novo e o publica
+no GitHub Pages.
 
 ```
 planilha do Google  ──(todo dia, 6h)──►  GitHub Actions roda atualizar_dados.py
@@ -11,7 +11,7 @@ planilha do Google  ──(todo dia, 6h)──►  GitHub Actions roda atualizar
                                            │  tira nome, e-mail, nascimento, escola…
                                            │  agrupa categorias pequenas
                                            ▼
-                                      index.html  ──►  Vercel publica
+                                      index.html  ──►  GitHub Pages publica
 ```
 
 ## Arquivos
@@ -22,15 +22,16 @@ planilha do Google  ──(todo dia, 6h)──►  GitHub Actions roda atualizar
 | `template.html` | O desenho da página. Tem marcadores como `__DATA_JSON__`, que o script troca pelos dados. |
 | `index.html` | A página pronta. **Não edite à mão**: ela é refeita todo dia a partir do template. |
 | `municipios-ibge.csv` | Centro de cada município brasileiro (IBGE), usado no mapa. |
-| `.github/workflows/atualizar.yml` | A rotina diária do GitHub. |
+| `.github/workflows/atualizar.yml` | A rotina diária do GitHub: gera a página e a publica. |
 | `.gitignore` | Impede que um CSV de respostas vá para o GitHub por engano. |
 
 ## Como colocar no ar (uma vez só)
 
-**1. Criar o repositório.** No GitHub, crie um repositório novo (ex.:
-`diagnostico-eeq`) e suba todos os arquivos desta pasta, **inclusive a pasta
-`.github`**. Ela começa com ponto e pode ficar escondida no seu computador. No
-macOS, aperte `Cmd + Shift + .` no Finder para vê-la.
+**1. Subir os arquivos**, **inclusive a pasta `.github`**. Pastas que começam com
+ponto ficam escondidas no computador, e o upload pelo site do GitHub costuma
+deixá-las de fora. Se isso acontecer, crie o arquivo direto no site: *Add file →
+Create new file*, digite o nome `.github/workflows/atualizar.yml` (cada `/` cria
+uma pasta), cole o conteúdo do arquivo e clique em *Commit changes*.
 
 **2. Guardar o link da planilha como segredo.** No repositório:
 *Settings → Secrets and variables → Actions → New repository secret*.
@@ -46,14 +47,18 @@ macOS, aperte `Cmd + Shift + .` no Finder para vê-la.
 **3. Liberar a rotina para salvar arquivos.** *Settings → Actions → General →
 Workflow permissions* → marque **Read and write permissions** → Save.
 
-**4. Rodar a primeira vez.** Aba *Actions* → *Atualizar painel* → *Run workflow*.
-Em um ou dois minutos aparece um ✓ verde. Clique na execução para ler o log, que
-explica o que o script fez (quantas respostas, o que foi agrupado, quais
-municípios não foram reconhecidos).
+**4. Deixar a rotina publicar o site.** *Settings → Pages → Build and deployment
+→ Source*: troque *Deploy from a branch* por **GitHub Actions**. Assim, quem
+publica o site é a própria rotina, logo depois de gerar a página.
 
-**5. Ligar na Vercel.** Em vercel.com, *Add New → Project*, escolha o repositório
-e clique em *Deploy*. Não é preciso configurar nada: é uma página HTML. Daqui
-para frente, cada atualização diária vira uma publicação nova, sozinha.
+**5. Rodar a primeira vez.** Aba *Actions* → *Atualizar painel* → *Run workflow*.
+Em um ou dois minutos aparece um ✓ verde. O endereço do site aparece na própria
+execução, no quadro *atualizar*. Clique na execução para ler o log, que explica o
+que o script fez: quantas respostas, o que foi agrupado, quais municípios não
+foram reconhecidos.
+
+> Prefere a Vercel? Basta ligar o repositório lá. O `index.html` que a rotina
+> salva no repositório todo dia também serve para ela.
 
 ## O dia a dia
 
@@ -65,6 +70,8 @@ para frente, cada atualização diária vira uma publicação nova, sozinha.
     publicada. No Google Planilhas: *Arquivo → Compartilhar → Publicar na web*.
   - *"só vieram N respostas"*: a planilha veio quase vazia (troca de aba, por
     exemplo). Confira se o link ainda aponta para a aba de respostas.
+- **Mudou o desenho?** Ao salvar uma alteração no `template.html` ou no
+  `atualizar_dados.py`, a rotina roda sozinha e o site já sai com a mudança.
 - **Município não reconhecido.** O município é escrito à mão no formulário
   ("Santiago do Iguape", "Cachoeira-Ba"). O log lista os que o script não
   reconheceu. Para ensinar, acrescente uma linha em `MUNICIPIO_APELIDOS`, no topo
