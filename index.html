@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diagnóstico da Educação Escolar Quilombola · ENFMQ · CONAQ</title>
+<meta name="description" content="Painel do Diagnóstico da Educação Escolar Quilombola, da Escola Nacional de Formação de Meninas Quilombolas (ENFMQ/CONAQ): o que estudantes quilombolas dizem sobre a escola e o território. Atualizado todo dia a partir das respostas do formulário.">
+<meta name="theme-color" content="#3B5D42">
+<meta name="robots" content="noindex">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Diagnóstico da Educação Escolar Quilombola · ENFMQ">
+<meta property="og:description" content="A escuta de estudantes quilombolas sobre a escola e o território: indicadores, mapa e cruzamento de respostas.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' fill='%233B5D42'/%3E%3Cpath d='M12 21C12 21 4 17.2 4 9.3C4 5.1 7.3 2 12 2C16.7 2 20 5.1 20 9.3C20 17.2 12 21 12 21Z' fill='%23fff'/%3E%3C/svg%3E">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+    :root{--verde:#3B5D42;--verde-escuro:#24382A;--dourado:#B9812F;--terracota:#A85630;--grafite:#2E271F;--texto:#4A4033;--medio:#6E624F;--claro:#E4DAC6;--fundo:#F4EEDF;--branco:#FFF;--creme:#FBF6EA;--borda:#D9CBAC;--alerta-bg:#FBF0DC;--alerta-borda:#DCAE5C;
+      /* Times em toda a página, como no painel das escolas. A lista é uma cadeia de
+         fallback: Times New Roman no Windows/macOS; Liberation Serif, Tinos e Nimbus
+         Roman são as equivalentes no Linux e no Android. */
+      --fonte:'Times New Roman',Times,'Liberation Serif','Tinos','Nimbus Roman',serif}
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{font-family:var(--fonte);background:var(--creme);color:var(--texto);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+    .container{max-width:1280px;margin:0 auto;padding:0 32px}
+    a{color:var(--verde)}
+    .top-bar{background:var(--verde-escuro);color:rgba(255,255,255,.85);font-size:13px;letter-spacing:.04em;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.1)}
+    .top-bar .container{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+    .top-bar strong{color:#fff;font-weight:600}
+    header.site-header{background:var(--branco);border-bottom:1px solid var(--claro);padding:40px 0 36px;position:relative;overflow:hidden}
+    .header-marca{display:flex;align-items:flex-start;gap:24px;border-left:4px solid var(--dourado);padding-left:24px}
+    .header-simbolo{width:56px;height:56px;background:var(--verde);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .header-simbolo svg{width:34px;height:34px}
+    .header-titulos h1{font-size:30px;font-weight:700;color:var(--verde-escuro);line-height:1.2;letter-spacing:-.01em}
+    .subtitulo-nome{font-size:14px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--dourado);margin-top:4px}
+    .header-titulos .subtitulo{font-size:16px;color:var(--medio);margin-top:8px;max-width:780px}
+    .header-titulos .lema{font-size:17px;color:var(--verde-escuro);margin-top:10px;font-style:italic}
+    .header-meta{margin-top:20px;padding-top:20px;border-top:1px solid var(--claro);font-size:14px;color:var(--medio);display:flex;gap:32px;flex-wrap:wrap}
+    .header-meta strong{color:var(--grafite);font-weight:600}
+    .motivo-raiz{position:absolute;inset:0;pointer-events:none;opacity:.08;z-index:0}
+    .motivo-raiz svg{width:100%;height:100%}
+    header.site-header .container{position:relative;z-index:1}
+    section.bloco{padding:48px 0;position:relative}
+    section.bloco::after{content:"";display:block;position:absolute;bottom:0;left:0;right:0;height:10px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 10' preserveAspectRatio='none'%3E%3Cpath d='M0,4 C10,9 20,0 30,5 C40,10 50,1 60,5 C70,9 80,0 90,5 C100,10 110,2 120,5 L120,10 L0,10 Z' fill='%23D9CBAC'/%3E%3C/svg%3E");background-repeat:repeat-x;background-size:120px 10px;opacity:.7}
+    section.bloco[id]{scroll-margin-top:56px}
+    .secao-cabecalho{margin-bottom:28px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px}
+    .secao-cabecalho .rotulo{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dourado);margin-bottom:8px}
+    .secao-cabecalho h2{font-size:24px;font-weight:600;color:var(--verde-escuro)}
+    .secao-cabecalho p.descricao{margin-top:10px;font-size:15px;color:var(--medio);max-width:780px}
+    .indicadores-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--claro);border:1px solid var(--claro)}
+    .indicador{background:var(--branco);padding:24px 22px}
+    .indicador .valor{font-size:32px;font-weight:700;color:var(--verde);line-height:1}
+    .indicador .valor.texto{font-size:19px;line-height:1.25}
+    .indicador .rotulo{margin-top:10px;font-size:13.5px;font-weight:600;color:var(--grafite);line-height:1.35}
+    .indicador .nota{margin-top:6px;font-size:13px;color:var(--medio);font-style:italic}
+    .filtros{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:20px;align-items:end;padding:24px;background:var(--fundo);border:1px solid var(--claro)}
+    .campo{display:flex;flex-direction:column;min-width:0}
+    .campo label{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--medio);margin-bottom:8px}
+    .campo select,.campo input{font-family:var(--fonte);font-size:15px;padding:10px 12px;border:1px solid var(--borda);background:var(--branco);color:var(--grafite);border-radius:0;outline:none;width:100%}
+    .campo select:focus{border-color:var(--verde)}
+    .btn-primario,.btn-limpar{font-family:var(--fonte);font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:11px 20px;cursor:pointer;border:1px solid var(--verde)}
+    .btn-limpar{background:transparent;color:var(--verde)}
+    .btn-limpar:hover{background:var(--verde);color:#fff}
+    .btn-primario{background:var(--verde);color:#fff}
+    .btn-primario:hover{background:var(--verde-escuro)}
+    .barra-acoes{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+    .bloco-filtros{background:var(--fundo);border-top:1px solid var(--claro);border-bottom:1px solid var(--claro)}
+    .faixa-recorte{position:sticky;top:0;z-index:50;background:var(--verde-escuro);color:rgba(255,255,255,.92);font-size:13px;letter-spacing:.03em;text-align:center;padding:8px 16px}
+    .navegacao{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px;font-size:14px}
+    .navegacao a{text-decoration:none;border:1px solid var(--borda);background:var(--branco);padding:5px 12px;color:var(--verde-escuro)}
+    .navegacao a:hover{background:var(--verde);border-color:var(--verde);color:#fff}
+
+    /* ---------- perguntas ---------- */
+    .grade-perguntas{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    .pergunta{background:var(--branco);border:1px solid var(--claro);padding:20px 22px 18px;min-width:0}
+    .pergunta.larga{grid-column:1/-1}
+    .perg-topo{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+    .perg-titulo{font-size:17px;font-weight:700;color:var(--verde-escuro);line-height:1.3}
+    .perg-n{font-size:13px;color:var(--medio);white-space:nowrap}
+    .perg-texto{font-size:13.5px;color:var(--medio);font-style:italic;margin-top:4px;line-height:1.4}
+    .perg-media{font-size:14px;color:var(--grafite);margin-top:8px}
+    .perg-media strong{font-size:18px;color:var(--verde)}
+    .selo{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#7A5A1E;background:var(--alerta-bg);border:1px solid var(--alerta-borda);padding:1px 7px;margin-top:8px}
+    /* barra 100%: os segmentos ficam separados por 2px da cor do fundo (o gap), em
+       vez de borda, para que cada parte se leia como peça de um todo */
+    .barra100{display:flex;gap:2px;height:30px;margin-top:14px;background:var(--branco)}
+    .seg{height:100%;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700;overflow:hidden;white-space:nowrap;min-width:3px;cursor:default}
+    .seg:first-child{border-radius:4px 0 0 4px}
+    .seg:last-child{border-radius:0 4px 4px 0}
+    .seg:only-child{border-radius:4px}
+    .extremos{display:flex;justify-content:space-between;font-size:12px;color:var(--medio);margin-top:4px}
+    .legenda-perg{list-style:none;margin-top:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:4px 16px;font-size:13.5px}
+    .legenda-perg li{display:flex;align-items:baseline;gap:8px;line-height:1.35}
+    .legenda-perg .sw{width:11px;height:11px;flex-shrink:0;border-radius:2px;transform:translateY(1px)}
+    .legenda-perg .lg-rot{flex:1;min-width:0}
+    .legenda-perg .lg-val{font-variant-numeric:tabular-nums;color:var(--grafite);font-weight:600;white-space:nowrap}
+    .legenda-perg .lg-val small{font-weight:400;color:var(--medio)}
+    .barras-h{margin-top:14px;display:flex;flex-direction:column;gap:7px}
+    .bh{display:grid;grid-template-columns:minmax(150px,38%) 1fr 92px;gap:12px;align-items:center;font-size:14px}
+    .bh-rot{line-height:1.3}
+    .bh-trilho{height:16px;background:var(--fundo);border-radius:0 4px 4px 0}
+    .bh-barra{height:100%;border-radius:0 4px 4px 0;min-width:2px}
+    .bh-val{font-variant-numeric:tabular-nums;font-weight:600;color:var(--grafite);text-align:right;white-space:nowrap}
+    .bh-val small{font-weight:400;color:var(--medio)}
+    .perg-rodape{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;font-size:12.5px;color:var(--medio)}
+    .btn-link{font-family:var(--fonte);font-size:13px;color:var(--verde);background:none;border:none;border-bottom:1px solid var(--verde);cursor:pointer;padding:0}
+    .btn-link:hover{color:var(--dourado);border-color:var(--dourado)}
+    .aviso-protecao{background:var(--alerta-bg);border:1px solid var(--alerta-borda);padding:22px;font-size:15px;color:#5C4A1A}
+    .aviso-protecao strong{color:#4A3B14}
+    .tiles-agregados{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;margin-top:20px}
+    .tile-agregado{border:1px solid var(--claro);background:var(--fundo);padding:16px 18px;font-size:14px}
+    .tile-agregado .num{font-size:26px;font-weight:700;color:var(--verde-escuro);line-height:1.1}
+
+    /* ---------- coleta e mapa ---------- */
+    .coleta-grid{display:grid;grid-template-columns:1fr 1.25fr;gap:32px;align-items:start}
+    .grafico-wrapper{position:relative;height:300px}
+    .camadas-painel{display:flex;gap:20px;align-items:end;flex-wrap:wrap;margin-bottom:12px}
+    .mapa-wrapper{position:relative;z-index:0;height:460px;border:1px solid var(--claro);background:var(--fundo)}
+    #mapa{height:100%;width:100%}
+    .leaflet-popup-content{font-family:var(--fonte);font-size:14px;margin:12px 14px;line-height:1.5}
+    .leaflet-popup-content strong{color:var(--verde-escuro);font-size:15px}
+    .leaflet-popup-tip,.leaflet-popup-content-wrapper{background:var(--creme);border-radius:2px}
+    .ponto-tooltip{background:var(--verde-escuro);color:#fff;border:none;font-family:var(--fonte);font-size:12px;padding:3px 8px;box-shadow:none}
+    .ponto-tooltip::before{border-top-color:var(--verde-escuro)!important}
+
+    /* ---------- cruzador ---------- */
+    .construtor-caixa{border:1px solid var(--claro);background:var(--fundo);padding:24px}
+    .construtor-controles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;align-items:end;margin-bottom:20px}
+    .construtor-resultado{background:var(--branco);border:1px solid var(--claro);padding:20px}
+    .construtor-grafico{position:relative;margin-bottom:16px}
+    .tabela-scroll{overflow-x:auto;border:1px solid var(--claro)}
+    table.tabela-ranking{width:100%;border-collapse:collapse;font-size:14px}
+    table.tabela-ranking th{text-align:left;padding:10px 14px;background:var(--verde-escuro);color:#fff;font-size:12px;letter-spacing:.04em;vertical-align:bottom;min-width:90px}
+    table.tabela-ranking th:first-child{min-width:180px}
+    table.tabela-ranking td{padding:9px 14px;border-bottom:1px solid var(--claro);font-variant-numeric:tabular-nums}
+    table.tabela-ranking tbody tr:nth-child(even){background:var(--fundo)}
+    table.tabela-ranking td.num{font-weight:700;color:var(--verde)}
+    .celula-vazia{color:var(--medio);font-style:italic}
+    .nota-metodo{font-size:13px;color:var(--medio);font-style:italic;margin-top:10px}
+    .caixa-aviso{background:var(--alerta-bg);border:1px solid var(--alerta-borda);padding:18px 20px;font-size:14px;color:#5C4A1A;margin-top:14px}
+    .caixa-aviso strong.titulo{display:block;margin-bottom:6px;color:#4A3B14;text-transform:uppercase;font-size:12px;letter-spacing:.06em}
+
+    /* ---------- fontes ---------- */
+    .fontes-grid{display:grid;grid-template-columns:2fr 1fr;gap:32px}
+    .fontes-texto p{margin-bottom:14px;font-size:15px}
+    .fontes-texto ul{margin:0 0 14px 20px;font-size:15px}
+    .fontes-texto li{margin-bottom:6px}
+    .cartao-fonte{border:1px solid var(--claro);padding:22px;background:var(--fundo)}
+    .cartao-fonte h3{font-size:16px;color:var(--verde-escuro);margin-bottom:10px}
+    .lista-download{display:flex;flex-direction:column;gap:10px}
+    .lista-download button{font-family:var(--fonte);text-align:left;font-size:14px;font-weight:600;padding:10px 14px;border:1px solid var(--verde);background:var(--branco);color:var(--verde);cursor:pointer}
+    .lista-download button:hover{background:var(--verde);color:#fff}
+    footer.site-footer{background:var(--verde-escuro);color:rgba(255,255,255,.7);padding:44px 0 30px;font-size:14px;margin-top:20px}
+    footer.site-footer .container{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:28px}
+    footer.site-footer strong{color:#fff;font-weight:600;display:block;margin-bottom:8px;font-size:13px;letter-spacing:.08em;text-transform:uppercase}
+    footer.site-footer p{margin-bottom:6px}
+    footer.site-footer .assinatura{border-top:1px solid rgba(255,255,255,.15);margin-top:30px;padding-top:20px;grid-column:1/-1;font-size:13px;color:rgba(255,255,255,.5)}
+    footer.site-footer a{color:rgba(255,255,255,.85);text-decoration:none;border-bottom:1px solid rgba(255,255,255,.35)}
+
+    /* tooltip único, reaproveitado por todas as barras */
+    #dica{position:fixed;z-index:3000;pointer-events:none;background:var(--verde-escuro);color:#fff;font-size:13px;line-height:1.4;padding:7px 10px;max-width:300px;box-shadow:0 2px 8px rgba(0,0,0,.2);opacity:0;transition:opacity .12s}
+    #dica.visivel{opacity:1}
+    div[vw]{z-index:2000}
+    :focus-visible{outline:2px solid var(--dourado);outline-offset:2px}
+
+    @media(max-width:900px){.fontes-grid,.coleta-grid,.grade-perguntas{grid-template-columns:1fr}.indicadores-grid{grid-template-columns:1fr 1fr}}
+    @media(max-width:560px){.indicadores-grid{grid-template-columns:1fr}}
+    @media(max-width:768px){
+        .container{padding:0 16px}
+        .header-titulos h1{font-size:23px}
+        .header-marca{flex-direction:column;gap:16px;padding-left:16px}
+        .header-meta{gap:10px 24px}
+        section.bloco{padding:32px 0}
+        .mapa-wrapper{height:360px}
+        .pergunta{padding:16px}
+        .bh{grid-template-columns:1fr 78px;gap:4px 10px}
+        .bh-rot{grid-column:1/-1}
+        .indicador .valor{font-size:28px}
+    }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+    <div class="container">
+        <span><strong>CONAQ</strong> · Escola Nacional de Formação de Meninas Quilombolas · <strong>ENFMQ</strong></span>
+        <span>Atualizado automaticamente todos os dias</span>
+    </div>
+</div>
+
+<header class="site-header">
+    <div class="motivo-raiz" aria-hidden="true"><svg viewBox="0 0 1000 260" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" stroke="#24382A" fill="none" stroke-width="2.4" stroke-linecap="round">
+      <path d="M60,260 C90,190 40,150 90,90 C120,50 90,10 140,-10"/><path d="M60,260 C100,210 130,205 150,150 C165,115 210,110 220,60"/>
+      <path d="M60,260 C40,200 70,170 40,120 C20,90 40,60 15,20"/><path d="M150,150 C180,140 195,110 230,105"/><path d="M90,90 C60,75 55,50 20,45"/>
+      <path d="M940,260 C910,190 960,150 910,90 C880,50 910,10 860,-10"/><path d="M940,260 C900,210 870,205 850,150 C835,115 790,110 780,60"/>
+      <path d="M940,260 C960,200 930,170 960,120 C980,90 960,60 985,20"/><path d="M850,150 C820,140 805,110 770,105"/><path d="M910,90 C940,75 945,50 980,45"/>
+      <path d="M500,260 C520,200 480,175 500,120 C515,85 490,55 510,10"/><path d="M500,260 C475,195 520,180 495,125"/>
+    </svg></div>
+    <div class="container">
+        <div class="header-marca">
+            <div class="header-simbolo" aria-hidden="true"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 21C12 21 4 17.2 4 9.3C4 5.1 7.3 2 12 2C16.7 2 20 5.1 20 9.3C20 17.2 12 21 12 21Z" fill="#FFFFFF"/>
+              <path d="M12 20V4" stroke="#3B5D42" stroke-width="1.1" fill="none" stroke-linecap="round"/>
+              <path d="M12 9L8.2 6.3M12 13L7.6 10.6M12 16.6L8.4 14.6" stroke="#3B5D42" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+              <path d="M12 9L15.8 6.3M12 13L16.4 10.6M12 16.6L15.6 14.6" stroke="#3B5D42" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+            </svg></div>
+            <div class="header-titulos">
+                <h1>Diagnóstico da Educação Escolar Quilombola</h1>
+                <p class="subtitulo-nome">A escuta de estudantes quilombolas · ENFMQ</p>
+                <p class="subtitulo">O que estudantes quilombolas dizem sobre a escola e o território: quem são, como chegam à escola, como ela funciona, se a história, a cultura e a identidade quilombola estão presentes, como a escola enfrenta o racismo e quais obstáculos ainda impedem o direito à Educação Escolar Quilombola. Diagnóstico da Escola Nacional de Formação de Meninas Quilombolas (ENFMQ), da CONAQ, com apoio do Fundo Malala e do Ministério da Educação (SECADI).</p>
+                <p class="lema">Sua experiência é conhecimento.</p>
+            </div>
+        </div>
+        <div class="header-meta">
+            <span><strong>Atualizado em:</strong> 14/10/2026 às 00:36</span>
+            <span><strong>Respostas:</strong> 116</span>
+            <span><strong>Comunidades em:</strong> 19 UF · 42 municípios</span>
+            <span><strong>Período das respostas:</strong> 28/09/2026 a 11/10/2026</span>
+        </div>
+        <nav class="navegacao" id="navegacao" aria-label="Seções do painel"></nav>
+    </div>
+</header>
+
+<!-- SÍNTESE -->
+<section class="bloco" id="sintese">
+    <div class="container">
+        <div class="secao-cabecalho"><div>
+            <div class="rotulo">Panorama</div>
+            <h2>Síntese do diagnóstico</h2>
+            <p class="descricao">Alguns números-chave do recorte escolhido nos filtros abaixo. Cada percentual é calculado entre quem respondeu àquela pergunta, contando também quem marcou “não sei informar”. A linha de baixo mostra a conta.</p>
+        </div></div>
+        <div class="indicadores-grid" id="indicadores"></div>
+    </div>
+</section>
+
+<!-- FILTROS -->
+<section class="bloco bloco-filtros" id="filtros">
+    <div class="container">
+        <div class="secao-cabecalho"><div>
+            <div class="rotulo">Comece por aqui</div>
+            <h2>Escolha o recorte</h2>
+            <p class="descricao">Os filtros valem para a página toda: síntese, perguntas e cruzamentos mudam juntos. Um exemplo: escolha <em>Identidade de gênero: Feminino</em> para ler o diagnóstico só pelas respostas das meninas. Para proteger quem respondeu, um recorte com menos de 5 respostas não mostra resultados.</p>
+        </div></div>
+        <div class="filtros" id="caixaFiltros"></div>
+    </div>
+</section>
+<div class="faixa-recorte" id="faixaRecorte" role="status"></div>
+
+<!-- COLETA E TERRITÓRIO -->
+<section class="bloco" id="coleta">
+    <div class="container">
+        <div class="secao-cabecalho"><div>
+            <div class="rotulo">De onde vêm as vozes</div>
+            <h2>Andamento da escuta e territórios</h2>
+            <p class="descricao">À esquerda, quantas respostas chegaram a cada dia. À direita, os municípios das comunidades (ou das escolas) de quem respondeu. Os círculos são maiores quanto mais respostas o município reúne. Esta seção mostra sempre a base inteira e não muda com os filtros. Veja o porquê na nota abaixo.</p>
+        </div></div>
+        <div class="coleta-grid">
+            <div>
+                <div class="grafico-wrapper"><canvas id="graficoDias" role="img" aria-label="Respostas recebidas por dia"></canvas></div>
+                <p class="nota-metodo" id="notaDias"></p>
+            </div>
+            <div>
+                <div class="camadas-painel">
+                    <div class="campo"><label for="mapaBase">O mapa mostra o município</label>
+                        <select id="mapaBase"><option value="comunidade">da comunidade de quem respondeu</option><option value="escola">da escola onde estuda</option></select></div>
+                </div>
+                <div class="mapa-wrapper"><div id="mapa"></div></div>
+                <p class="nota-metodo" id="notaMapa"></p>
+            </div>
+        </div>
+        <div class="caixa-aviso"><strong class="titulo">Por que o mapa não muda com os filtros</strong>O município de cada pessoa nunca é publicado junto com as respostas dela. Se fosse, bastaria filtrar um município pequeno para saber o que uma estudante específica respondeu. Por isso o mapa recebe só a contagem por município, já somada, e o resto do painel recebe as respostas sem o município. O município foi escrito à mão no formulário. A localização usa o centro (centróide) do município, nunca o endereço da comunidade.</div>
+    </div>
+</section>
+
+<!-- BLOCOS DE PERGUNTAS (montados pelo script abaixo) -->
+<div id="blocos"></div>
+
+<!-- CRUZADOR -->
+<section class="bloco" id="cruzador">
+    <div class="container">
+        <div class="secao-cabecalho"><div>
+            <div class="rotulo">Explore por conta própria</div>
+            <h2>Monte seu próprio cruzamento</h2>
+            <p class="descricao">Escolha uma pergunta para as linhas e, se quiser, outra para cruzar. Exemplo: <em>Identidade de gênero</em> × <em>Com que frequência presencia racismo</em>, medido em “% dentro de cada linha”, mostra se meninas e meninos relatam o racismo de forma diferente. Linhas com menos de 5 respostas não são exibidas.</p>
+        </div></div>
+        <div class="construtor-caixa">
+            <div class="construtor-controles">
+                <div class="campo"><label for="cruzA">Linhas</label><select id="cruzA"></select></div>
+                <div class="campo"><label for="cruzB">Cruzar com (opcional)</label><select id="cruzB"></select></div>
+                <div class="campo"><label for="cruzModo">Medida</label>
+                    <select id="cruzModo">
+                        <option value="pct">% dentro de cada linha</option>
+                        <option value="contagem">Nº de respostas</option>
+                        <option value="media">Nota média de uma escala</option>
+                    </select></div>
+                <div class="campo" id="linhaCruzEscala" style="display:none"><label for="cruzEscala">… escala</label><select id="cruzEscala"></select></div>
+            </div>
+            <div class="construtor-resultado">
+                <div class="construtor-grafico" id="caixaGraficoCruz"><canvas id="graficoCruzador" role="img" aria-label="Gráfico do cruzamento escolhido"></canvas></div>
+                <div class="tabela-scroll">
+                    <table class="tabela-ranking" id="tabelaCruzador"><thead><tr id="cabecalhoCruzador"></tr></thead><tbody id="corpoCruzador"></tbody></table>
+                </div>
+                <div class="nota-metodo" id="notaCruzador"></div>
+            </div>
+            <div class="barra-acoes"><button class="btn-primario" id="btnBaixarCruzamento">Baixar este cruzamento (CSV)</button></div>
+        </div>
+    </div>
+</section>
+
+<!-- FONTES E PRIVACIDADE -->
+<section class="bloco" id="metodo">
+    <div class="container">
+        <div class="secao-cabecalho"><div>
+            <div class="rotulo">Transparência</div>
+            <h2>Como os dados chegam aqui e como as estudantes são protegidas</h2>
+        </div></div>
+        <div class="fontes-grid">
+            <div class="fontes-texto">
+                <p><strong>De onde vêm os dados.</strong> As respostas são do formulário <em>Diagnóstico da Educação Escolar Quilombola – ENFMQ</em>, respondido por estudantes quilombolas. Todo dia, de madrugada, uma rotina automática baixa a planilha de respostas, tira os dados pessoais, organiza as respostas e gera esta página de novo. A data no topo mostra quando isso aconteceu pela última vez. Não há estimativa: cada número é uma contagem das respostas recebidas.</p>
+                <p><strong>Quem está (e quem não está) aqui.</strong> O diagnóstico é uma escuta, não uma amostra estatística. Ele mostra o que disseram as pessoas que responderam, e a participação depende da mobilização em cada território. Por isso os números não devem ser lidos como “a realidade de todas as escolas quilombolas do estado”. Eles valem como a voz de quem participou.</p>
+                <p><strong>O que nunca é publicado.</strong> Nome, e-mail, data de nascimento, horário de envio, nome da escola, município de cada pessoa, tipo de deficiência, motivo de abandono escolar, monitora pedagógica e todas as respostas escritas (as dificuldades com transporte e as violações de direitos relatadas). Elas ficam na planilha, de acesso da equipe, para a leitura qualitativa.</p>
+                <p><strong>O que é publicado só como total.</strong> Faixa etária, turno, trabalho fora da escola, deficiência e abandono escolar aparecem como totais da base inteira. Eles não mudam com os filtros e não entram no cruzador. Somados a estado, gênero e série, permitiriam reconhecer uma pessoa.</p>
+                <p><strong>Grupos pequenos.</strong> Em estado, gênero, raça/cor e série, categorias com menos de 5 pessoas aparecem agrupadas como “grupo pequeno”. Pelo mesmo motivo, nenhum recorte ou linha de cruzamento com menos de 5 respostas é exibido. Conforme novas respostas chegam, as categorias passam do limite e voltam a aparecer sozinhas.</p>
+                <div class="caixa-aviso"><strong class="titulo">Como ler as perguntas</strong>As perguntas de escala (de 0 a 5 ou de 1 a 5) são mostradas com a nota média e a distribuição das notas. As de múltipla escolha somam mais de 100%, porque cada pessoa podia marcar várias opções. Nelas, o percentual é sobre quem respondeu à pergunta. Respostas escritas no campo “Outro” foram lidas e colocadas na categoria correspondente quando era possível (por exemplo, “38 minutos” entrou em “Menos de 1 hora”). As que não se encaixavam ficaram como “Outra resposta”.</div>
+            </div>
+            <div class="cartao-fonte">
+                <h3>Baixar e conferir</h3>
+                <p style="font-size:14px;margin-bottom:12px">A base anonimizada traz uma linha por resposta, só com as perguntas de escolha, exatamente como o painel as usa. O dicionário explica cada coluna.</p>
+                <div class="lista-download">
+                    <button id="btnBaixarBase">Base anonimizada (CSV)</button>
+                    <button id="btnBaixarDicionario">Dicionário das variáveis (CSV)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<footer class="site-footer">
+    <div class="container">
+        <div><strong>CONAQ</strong><p>Coordenação Nacional de Articulação das Comunidades Negras Rurais Quilombolas.</p></div>
+        <div><strong>ENFMQ</strong><p>Escola Nacional de Formação de Meninas Quilombolas, com apoio do Fundo Malala e do Ministério da Educação (SECADI).</p></div>
+        <div><strong>Educação Escolar Quilombola</strong><p>Marco de referência: Resolução CNE/CEB nº 8/2012, que define as Diretrizes Curriculares Nacionais para a Educação Escolar Quilombola.</p></div>
+        <div class="assinatura">Painel adaptado do <a href="https://projeto-eq.vercel.app/" target="_blank" rel="noopener">Escolas Quilombolas em Dados</a> · Gerado em 14/10/2026 às 00:36 a partir das respostas do formulário · Arquivo único, sem servidor nem banco de dados</div>
+    </div>
+</footer>
+
+<div id="dica" role="tooltip"></div>
+
+<script>
+/* ==================== DADOS ====================
+   O gerador (atualizar_dados.py) escreve aqui um pacote colunar: para cada
+   pergunta, um array com o ÍNDICE da categoria escolhida por cada pessoa
+   (-1 = não respondeu). Nas de múltipla escolha, o número é uma máscara de bits:
+   o bit i ligado quer dizer "marcou a opção i". Nenhum dado pessoal vem junto. */
+const P = {"n":116,"gerado":"14/10/2026 às 00:36","minimoGrupo":5,"blocos":[["perfil","Quem respondeu"],["territorio","Território e participação"],["acesso","Escola, matrícula e transporte"],["estrutura","Estrutura da escola"],["identidade","Identidade, currículo e formação"],["racismo","Racismo, gênero e participação"],["obstaculos","Obstáculos ao direito"]],"vars":[{"k":"regiao","rot":"Região (da comunidade)","tipo":"unica","bloco":"local","qi":false,"ordem":["Norte","Nordeste","Centro-Oeste","Sudeste","Sul","Não divulgada (grupo pequeno)"],"tons":"ccccc"},{"k":"uf","rot":"UF (da comunidade)","tipo":"unica","bloco":"local","qi":true,"ordem":["AC","AL","BA","DF","GO","MA","MG","MS","MT","PA","PE","PR","RJ","RN","RO","RR","RS","SC","SP","TO","UF com menos de 5 respostas"],"tons":"cccccccccccccccccccc?","agrupadas":7},{"k":"genero","rot":"Identidade de gênero","tipo":"unica","bloco":"perfil","qi":true,"ordem":["Feminino","Masculino","Grupo pequeno (não divulgado)"],"tons":"cc?","agrupadas":1},{"k":"raca","rot":"Raça/cor (autodeclarada)","tipo":"unica","bloco":"perfil","qi":true,"ordem":["Preta","Parda","Branca","Indígena","Grupo pequeno (não divulgado)"],"tons":"cccc?","agrupadas":1},{"k":"faixaEtaria","rot":"Faixa etária (na data da resposta)","tipo":"unica","bloco":"perfil","agregado":true,"ordem":["Até 14 anos","15 a 17 anos","18 a 20 anos","21 anos ou mais"],"tons":"cccc"},{"k":"serie","rot":"Série/ano que cursa","tipo":"unica","bloco":"perfil","qi":true,"ordem":["8º ano do Ensino Fundamental","9º ano do Ensino Fundamental","1ª série do Ensino Médio","2ª série do Ensino Médio","3ª série do Ensino Médio","Grupo pequeno (não divulgado)"],"tons":"ccccc?","agrupadas":2},{"k":"turno","rot":"Turno em que estuda","tipo":"unica","bloco":"perfil","agregado":true,"ordem":["Manhã","Tarde","Noite","Período integral"],"tons":"cccc"},{"k":"trabalho","rot":"Trabalha ou ajuda a família/comunidade fora da escola","tipo":"unica","bloco":"perfil","agregado":true,"ordem":["Sim, ajudo nas atividades da família ou da comunidade","Sim, trabalho com remuneração","Não","Outra resposta"],"tons":"cccc"},{"k":"autodeclaraQuilombola","rot":"Se autodeclara quilombola","tipo":"unica","bloco":"territorio","ordem":["Sim","Não"],"tons":"cc"},{"k":"moraComunidade","rot":"Mora em comunidade quilombola","tipo":"unica","bloco":"territorio","ordem":["Sim","Não"],"tons":"cc"},{"k":"reconhecidaFCP","rot":"Comunidade reconhecida pela Fundação Palmares","tipo":"unica","bloco":"territorio","ordem":["Sim","Não","Não sei informar"],"tons":"pn?"},{"k":"associacao","rot":"Participa das reuniões da associação da comunidade","tipo":"unica","bloco":"territorio","ordem":["Participo regularmente","Participo raramente","Não participo","Não se aplica"],"tons":"PnN?"},{"k":"conheceConaq","rot":"Conhece a CONAQ","tipo":"unica","bloco":"territorio","ordem":["Sim","Não"],"tons":"pn"},{"k":"participaConaq","rot":"Participa de projeto ou coletivo da CONAQ","tipo":"unica","bloco":"territorio","ordem":["Educação","Juventude","Não participo"],"tons":"ccn"},{"k":"escolaTerritorio","rot":"A escola fica em território quilombola","tipo":"unica","bloco":"acesso","ordem":["Sim","Não"],"tons":"cc"},{"k":"identificaMatricula","rot":"A escola identifica o estudante quilombola na matrícula","tipo":"unica","bloco":"acesso","ordem":["Sim","Não","Não sei informar"],"tons":"pn?"},{"k":"reconhecidoEscola","rot":"É reconhecida/o como quilombola na escola","tipo":"unica","bloco":"acesso","ordem":["Sim","Não","Não sei informar"],"tons":"pn?"},{"k":"dificuldadeTransporte","rot":"Estudantes quilombolas têm dificuldade com o transporte escolar","tipo":"unica","bloco":"acesso","ordem":["Não","Sim","Não se aplica"],"tons":"pn?"},{"k":"meioTransporte","rot":"Meio de transporte até a escola","tipo":"unica","bloco":"acesso","ordem":["Ônibus escolar","Van ou kombi escolar","Barco escolar","Transporte coletivo","Transporte da família","A pé ou de bicicleta","Mais de um meio","Outra resposta"],"tons":"cccccccc"},{"k":"avaliacaoTransporte","rot":"Avaliação do transporte escolar","tipo":"escala","bloco":"acesso","min":1,"max":5,"polaridade":1,"extremos":["pior avaliação","melhor avaliação"],"ordem":["1","2","3","4","5"]},{"k":"tempoTransporte","rot":"Tempo de deslocamento até a escola","tipo":"unica","bloco":"acesso","ordem":["Menos de 1 hora","Entre 1 e 2 horas","Entre 2 e 3 horas","Mais de 3 horas","Não se aplica","Outra resposta"],"tons":"p0nN??"},{"k":"acessibilidade","rot":"Acessibilidade da escola para todos os alunos","tipo":"escala","bloco":"estrutura","min":0,"max":5,"polaridade":1,"extremos":["menos acessível","mais acessível"],"ordem":["0","1","2","3","4","5"]},{"k":"merenda","rot":"Qualidade da merenda escolar","tipo":"escala","bloco":"estrutura","min":1,"max":5,"polaridade":1,"extremos":["pior qualidade","melhor qualidade"],"ordem":["1","2","3","4","5"]},{"k":"alimentacaoLocal","rot":"A alimentação escolar usa produção quilombola do território","tipo":"unica","bloco":"estrutura","ordem":["Sim, com frequência","Às vezes","Raramente","Não","Não sei informar"],"tons":"PpnN?"},{"k":"informatica","rot":"Informática e internet para estudantes","tipo":"unica","bloco":"estrutura","ordem":["Sim, há sala de informática, computadores e internet disponíveis","Há computadores e internet, mas não há sala de informática","Há sala de informática e computadores, mas não há internet","Há computadores, mas são poucos ou têm acesso limitado à internet","Não há computadores nem acesso à internet","Não sei informar"],"tons":"PpnmN?","curtos":["Sala, computadores e internet","Computadores e internet, sem sala","Sala e computadores, sem internet","Poucos computadores / internet limitada","Sem computadores nem internet","Não sei informar"]},{"k":"quadra","rot":"Quadra ou espaço para esportes","tipo":"unica","bloco":"estrutura","ordem":["Sim, e está em boas condições","Sim, mas precisa de melhorias","Não"],"tons":"P0N"},{"k":"biblioteca","rot":"Biblioteca ou sala de leitura","tipo":"unica","bloco":"estrutura","ordem":["Sim","Não"],"tons":"PN"},{"k":"fechamento","rot":"Fechamento de escola, sala ou turma nos últimos anos","tipo":"unica","bloco":"estrutura","ordem":["Não","Sim, fechamento de sala/turma","Sim, fechamento da escola","Sim, ambos","Não sei informar"],"tons":"PnmN?"},{"k":"materiais","rot":"Materiais didáticos sobre história e cultura quilombola","tipo":"unica","bloco":"identidade","ordem":["Sim, possui materiais suficientes e são utilizados nas aulas","Sim, possui materiais, mas não são utilizados nas aulas","Sim, possui alguns materiais, mas são poucos","Não possui","Não sei informar"],"tons":"P0nN?","curtos":["Suficientes e usados nas aulas","Tem, mas não são usados","Poucos materiais","Não possui","Não sei informar"]},{"k":"formacaoProfessores","rot":"Professoras/es recebem formação em Educação Escolar Quilombola","tipo":"unica","bloco":"identidade","ordem":["Sim","Não","Não sei informar"],"tons":"PN?"},{"k":"profQuilombolas","rot":"Professoras/es quilombolas na escola","tipo":"unica","bloco":"identidade","ordem":["0","1-3","4-7","8-10","11-15","Mais de 15","Não sei informar","Não se aplica"],"tons":"ssssss??","curtos":["Nenhum","1 a 3","4 a 7","8 a 10","11 a 15","Mais de 15","Não sei informar","Não se aplica"]},{"k":"profComunidade","rot":"Profissionais da própria comunidade na escola","tipo":"unica","bloco":"identidade","ordem":["0","1-3","4-7","8-10","11-15","Mais de 15","Não sei informar","Não se aplica"],"tons":"ssssss??","curtos":["Nenhum","1 a 3","4 a 7","8 a 10","11 a 15","Mais de 15","Não sei informar","Não se aplica"]},{"k":"atividades","rot":"Atividades de valorização da identidade e cultura quilombola","tipo":"multipla","bloco":"identidade","opcoes":["Dança regional/tradicional","Roda de conversa com as lideranças","Contação de histórias","Meio ambiente","Pinturas","Oficinas de artesanatos","Produção de material audiovisual"],"ordem":["Dança regional/tradicional","Roda de conversa com as lideranças","Contação de histórias","Meio ambiente","Pinturas","Oficinas de artesanatos","Produção de material audiovisual","Só em datas comemorativas","Nenhuma atividade","Outra resposta"]},{"k":"areas","rot":"Áreas do conhecimento que trabalham a identidade quilombola","tipo":"multipla","bloco":"identidade","opcoes":["História","Arte","Geografia","Sociologia","Língua Portuguesa","Filosofia","Matemática","Educação Física","Ciências","Química","Física","Biologia","Língua Inglesa","Língua Espanhola","Em nenhuma das áreas"],"ordem":["História","Arte","Geografia","Sociologia","Língua Portuguesa","Filosofia","Matemática","Educação Física","Ciências","Química","Física","Biologia","Língua Inglesa","Língua Espanhola","Em nenhuma das áreas","Outra resposta"]},{"k":"antirracista","rot":"A escola desenvolve educação antirracista","tipo":"unica","bloco":"racismo","ordem":["Sempre","Muitas vezes","Às vezes","Raramente","Nunca","Não sei informar"],"tons":"Pp0nN?"},{"k":"racismoFrequencia","rot":"Com que frequência presencia racismo ou discriminação na escola","tipo":"escala","bloco":"racismo","min":0,"max":5,"polaridade":-1,"extremos":["menos frequente","mais frequente"],"ordem":["0","1","2","3","4","5"]},{"k":"igualdadeMeninas","rot":"Meninas quilombolas têm as mesmas oportunidades que os meninos","tipo":"escala","bloco":"racismo","min":0,"max":5,"polaridade":1,"extremos":["menos igualdade","mais igualdade"],"ordem":["0","1","2","3","4","5"]},{"k":"participacaoDecisoes","rot":"A comunidade participa das decisões sobre a escola","tipo":"unica","bloco":"racismo","ordem":["Sim, de forma efetiva","Participa parcialmente","Participa pouco","Não participa","Não sei informar"],"tons":"PpnN?"},{"k":"peDeMeia","rot":"Recebe o Pé-de-Meia (ensino médio)","tipo":"unica","bloco":"racismo","ordem":["Sim","Não","Não conheço o programa"],"tons":"cc?"},{"k":"obstaculos","rot":"Principais obstáculos ao direito à Educação Escolar Quilombola","tipo":"multipla","bloco":"obstaculos","opcoes":["Falta de materiais didáticos específicos","Transporte escolar insuficiente ou precário","Falta de formação sobre Educação Escolar Quilombola","Falta de professores/as quilombolas","Falta de valorização da identidade e cultura quilombola","Racismo e discriminação","Infraestrutura escolar inadequada","Falta de participação da comunidade nas decisões","Currículo pouco relacionado à realidade quilombola","Alimentação escolar que não valoriza a produção local quilombola","Falta ou precariedade de internet/conectividade","Falta de professores/as e outros profissionais","Desigualdade no acesso ao esporte, especialmente para meninas","Dificuldade de acesso e permanência dos estudantes","Fechamento de salas/turmas","Fechamento de escolas"],"ordem":["Falta de materiais didáticos específicos","Transporte escolar insuficiente ou precário","Falta de formação sobre Educação Escolar Quilombola","Falta de professores/as quilombolas","Falta de valorização da identidade e cultura quilombola","Racismo e discriminação","Infraestrutura escolar inadequada","Falta de participação da comunidade nas decisões","Currículo pouco relacionado à realidade quilombola","Alimentação escolar que não valoriza a produção local quilombola","Falta ou precariedade de internet/conectividade","Falta de professores/as e outros profissionais","Desigualdade no acesso ao esporte, especialmente para meninas","Dificuldade de acesso e permanência dos estudantes","Fechamento de salas/turmas","Fechamento de escolas","Outra resposta"]}],"perguntas":{"genero":"Como você se identifica em relação à sua identidade de gênero?","raca":"Qual a sua autodeclaração de raça/cor?","serie":"Qual série/ano você está cursando?","turno":"Qual é o horário que você estuda?","trabalho":"Quando não está na escola, você trabalha ou ajuda nas atividades da sua família ou comunidade?","autodeclaraQuilombola":"Você se autodeclara quilombola?","moraComunidade":"Você mora em uma comunidade quilombola?","reconhecidaFCP":"A Comunidade Quilombola onde você mora é reconhecida pela Fundação Palmares?","associacao":"Você participa das reuniões da associação da sua comunidade?","conheceConaq":"Você conhece a CONAQ ( Coordenação Nacional de Articulação de Comunidades Negras Rurais Quilombola)?","participaConaq":"Se sim, você participa de algum projeto ou coletivo da CONAQ?","escolaTerritorio":"A escola em que você estuda está em território quilombola?","identificaMatricula":"A escola identifica se o estudante é quilombola no ato da matrícula?","reconhecidoEscola":"Você é reconhecido como quilombola na sua escola?","dificuldadeTransporte":"Os estudantes quilombolas possuem dificuldades com transporte escolar?","meioTransporte":"Qual é o meio de transporte utilizado pelos estudantes quilombolas para chegar à escola?","avaliacaoTransporte":"Como você avalia o transporte escolar utilizado pelos estudantes quilombolas?","tempoTransporte":"Quanto tempo você passa no transporte escolar da sua comundade até chegar à escola?","acessibilidade":"A sua escola tem acessibilidade para todos os alunos? (Por exemplo: rampas, banheiro adaptado, materiais acessíveis, apoio para estudantes surdos, cegos ou com deficiência.)","merenda":"Qual a qualidade da merenda escolar?","alimentacaoLocal":"Na sua escola, a alimentação escolar inclui alimentos produzidos por agricultores/as e produtores/as quilombolas do território?","informatica":"Na sua escola, há sala de informática, computadores e acesso à internet para os estudantes?","quadra":"A sua escola tem quadra ou espaço adequado para práticas esportivas?","biblioteca":"A sua escola tem biblioteca ou sala de leitura ?","fechamento":"Na sua escola ou comunidade houve fechamento de escola, sala ou turma nos últimos anos?","materiais":"A escola possui materiais didáticos voltados para a história, cultura e realidade quilombola?","formacaoProfessores":"As professores e professores recebem formação sobre Educação Escolar Quilombola?","profQuilombolas":"Na sua escola há professores/as quilombolas? Quantos?","profComunidade":"A escola possui profissionais que são da própria comunidade? Se sim, quantos?","atividades":"Selecione quais as atividades de valorização da identidade e cultura quilombola que sua escola desenvolve:","areas":"Em quais áreas do conhecimento sua escola trabalha a valorização da identidade, história e cultura quilombola? (Marque todas as opções que se aplicam.)","antirracista":"A escola desenvolve uma educação antirracista, que combate o racismo e valoriza a diversidade?","racismoFrequencia":"Com que frequência você presencia situações de racismo, discriminação ou desvalorização da identidade quilombola na escola?","igualdadeMeninas":"Na sua escola, meninas quilombolas têm as mesmas oportunidades que os meninos para participar de todas as atividades?","participacaoDecisoes":"A comunidade quilombola participa das decisões relacionadas à escola e às políticas educacionais?","peDeMeia":"Você recebe o auxílio para estudantes do Ensino Médio chamado “ Pé de meia?","obstaculos":"Na sua opinião, quais são os principais obstáculos para garantir o direito à Educação Escolar Quilombola no seu território? (Pode indicar mais de uma)","faixaEtaria":"Calculada a partir da data de nascimento, na data da resposta.","uf":"A qual estado do país sua comunidade pertence?","regiao":"Derivada do estado da comunidade."},"colunas":{"regiao":[1,1,1,1,1,5,4,1,5,5,1,5,1,0,1,3,3,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1,5,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,0,1,3,2,4,2,4,3,3,3,3,1,1,2,4,0,0,0,1,1,1,1,1,2,0,0,1,1,1,1,3,4,4,3,4,3,3,1,1,1,3,1,1,3,3,1,1,1,0,1,1,0,1,0,0,3,1,3,3,1,1,0,0,0,0,0],"uf":[20,20,20,5,5,20,11,2,20,20,13,20,2,9,5,6,6,2,2,2,2,2,2,2,2,9,5,2,20,1,9,2,20,2,10,10,1,1,1,2,8,2,1,2,20,2,2,13,2,13,9,1,6,8,11,8,11,6,12,12,6,2,13,8,11,9,9,9,2,2,2,20,20,8,9,9,2,13,5,20,18,11,11,18,11,18,18,10,10,10,18,20,13,12,12,2,20,2,9,10,10,19,2,19,9,12,2,18,18,10,20,19,9,19,19,19],"genero":[0,0,0,0,0,0,0,1,0,0,1,0,1,0,1,0,1,0,0,2,1,0,0,1,1,1,0,0,1,1,1,0,0,1,1,0,1,1,1,1,0,1,1,1,0,1,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,1,0,1,0,1,1,1,1,1,1,0,1,0,1,1,0,0,0,0,1,0,0,1,0,1,1,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,1,0,0,1,1],"raca":[0,1,1,0,4,0,0,0,0,0,1,1,0,1,0,1,0,1,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,1,4,0,0,1,1,2,0,1,0,1,1,1,1,1,1,0,1,2,1,1,0,1,1,1,1,2,1,1,0,2,0,0,1,1,1,0,0,0,0,0,1,0,0,1,0,0,1,1,0,4,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,2,0,0,1,0,1],"serie":[2,2,4,3,4,4,5,3,0,1,2,5,3,4,4,4,2,4,4,3,3,2,2,0,1,2,2,3,3,0,2,3,4,2,2,4,3,2,4,4,2,2,4,2,4,3,1,1,4,2,5,2,3,4,2,3,2,2,3,2,4,3,3,4,5,2,3,4,3,4,3,4,3,5,1,4,0,0,1,4,4,2,1,4,1,4,3,2,3,2,4,1,4,1,0,1,3,0,2,3,4,2,2,3,1,2,4,3,4,2,2,4,2,1,1,1],"autodeclaraQuilombola":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"moraComunidade":[0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,1,0,0,0,0,0,0,1,0,0,1,1,1],"reconhecidaFCP":[0,2,0,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,2,0,0,0,0,0,0,0,0,0,0,2,0,1,0,0,2,0,0,2,0,0,0,0,0,2,0,2,0,0,0,0,0,0,0,0,0,2,2,0,2,0,0,0,0,0,0,0,0,0,0,0,2,1,0,0,1,2,2,0,0,0,0,2,0,0,0,0,0,0,0,2,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0],"associacao":[1,2,1,2,0,1,2,0,0,0,2,0,0,3,0,0,2,1,1,1,2,2,2,0,2,2,1,1,1,1,0,2,0,2,0,2,2,2,2,1,2,2,2,0,1,0,1,2,0,0,2,1,2,2,0,1,2,0,1,0,1,2,0,0,3,2,2,0,1,2,1,1,1,2,2,0,2,2,2,0,0,0,0,0,2,2,0,2,1,1,0,0,0,2,1,2,1,2,0,1,2,0,2,1,1,0,0,1,1,1,2,0,0,0,0,0],"conheceConaq":[0,0,1,0,0,0,0,0,0,0,1,0,0,1,0,1,1,0,0,1,1,1,1,1,1,1,1,0,1,1,0,0,0,0,0,0,1,1,1,0,0,0,1,0,0,0,0,1,0,0,1,0,1,1,0,1,0,0,0,1,1,1,1,0,0,1,0,1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,1,1,0,1,0,0,0,0,0,0,0,0,0,1,1,0,1,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,1],"participaConaq":[1,2,2,2,2,2,0,0,1,1,2,2,0,2,0,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,2,0,2,1,2,2,2,2,2,2,2,2,2,0,2,2,2,2,2,2,1,2,2,2,2,2,2,2,2,2,2,2,1,0,2,2,2,2,2,2,2,2,0,2,2,2,2,0,2,2,2,2,2,2,2,2,2,2,2,1,0,2,2,2,2,2,2,2,1,2,2,2,2,1,2,0,2,1,2,2,2,2,2,2,2],"escolaTerritorio":[1,1,1,0,0,1,0,1,0,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,1,1,1,0,0,1,1,1,0,0,0,1,1,1,1,1,0,1,1,0,1,0,0,1,0,1,0,1,1,0,1,1,1,1,1,0,1,0,1,1,-1,1,1,0,1,0,0,0,1,0,1,1,0,1,0,0,0,0,0,1,0,1,0,0,0,1,0,1,0,0,1,1,1,0,1,1,1,1,1,1,1,0,-1,1,-1],"identificaMatricula":[2,2,0,2,0,0,0,0,0,0,2,1,0,1,1,1,1,0,0,0,0,0,0,2,2,1,0,0,0,0,1,1,1,1,0,0,1,2,2,2,0,0,2,0,1,0,0,2,0,0,1,2,2,0,1,2,1,2,2,2,2,0,0,0,1,2,1,1,0,2,0,1,0,0,1,0,2,0,0,0,2,2,1,2,1,2,2,2,2,0,2,2,1,1,1,2,2,0,0,2,0,0,0,0,1,2,0,2,2,0,1,0,0,0,1,0],"reconhecidoEscola":[1,1,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,0,0,2,0,0,1,0,1,0,0,2,1,1,0,0,0,2,0,0,0,0,0,0,0,1,1,1,0,1,2,1,0,0,0,2,0,0,0,0,0,0,1,0,2,0,0,1,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,1,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0],"dificuldadeTransporte":[1,0,0,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,0,2,1,0,0,0,1,1,1,1,1,1,0,0,0,1,1,1,0,1,0,0,0,1,0,0,1,1,1,1,1,1,1,1,0,0,1,0,2,2,1,1,1,0,1,0,0,0,0,2,1,1,0,1,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,0,0,0,1,1,1,1,1,1,1,0,0,0,1,1,1,0,0,0,1,0,0,0],"meioTransporte":[0,0,0,0,0,2,1,0,4,4,0,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,1,0,0,0,0,0,0,0,0,0,0,1,0,0,6,0,6,0,0,1,0,1,1,1,1,1,1,0,0,0,0,0,5,0,1,2,5,0,3,0,2,1,3,0,0,0,0,0,0,0,0,0],"avaliacaoTransporte":[0,3,2,2,1,3,1,2,0,2,3,0,2,1,1,2,1,0,1,2,1,2,2,2,1,3,1,1,2,2,0,1,1,1,2,0,4,4,4,2,1,2,1,1,3,2,3,1,2,4,0,0,2,3,1,2,2,2,4,2,3,1,3,0,0,1,0,2,2,4,1,2,1,0,2,0,2,2,0,1,0,3,0,2,2,0,1,2,2,1,1,4,0,4,4,2,3,2,0,0,2,3,1,1,2,3,0,1,2,2,4,1,1,2,2,0],"tempoTransporte":[1,0,1,1,1,4,0,1,1,1,1,1,1,1,1,1,0,1,4,0,4,0,4,4,0,0,0,1,1,0,0,0,1,0,4,0,0,0,0,1,0,1,1,1,0,4,0,0,0,0,0,0,4,0,0,0,0,4,0,0,4,0,0,4,0,0,0,0,4,0,1,1,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,4,0,1,4,0,0,1,0,0,0,0,2,0,4,0,0],"acessibilidade":[4,1,5,3,3,0,2,1,0,0,1,0,1,1,2,1,3,0,0,3,3,3,3,1,3,0,3,0,5,4,3,3,3,3,4,3,4,5,4,1,3,0,3,2,4,1,0,0,3,5,2,2,4,3,1,3,1,4,2,3,4,3,5,2,2,0,2,2,0,2,3,0,2,5,0,1,0,3,0,5,0,5,0,0,2,0,2,3,4,4,4,4,3,5,4,0,1,0,1,2,3,0,4,0,0,5,3,4,3,5,4,5,2,3,3,0],"merenda":[4,4,3,3,3,2,2,2,1,1,2,0,2,3,2,0,1,0,2,2,2,2,4,2,3,2,4,2,3,3,0,4,2,2,3,4,3,2,2,0,3,2,3,3,3,3,3,2,3,4,3,1,2,3,3,4,3,3,1,4,3,2,3,2,2,2,0,1,2,2,1,1,2,4,2,2,2,3,2,4,0,3,0,2,3,0,0,4,4,2,2,4,3,4,4,2,1,2,0,2,2,1,4,1,2,4,1,2,2,3,3,2,2,2,3,1],"alimentacaoLocal":[3,4,3,2,1,4,0,3,0,0,4,3,3,3,3,3,3,3,3,0,0,0,0,3,1,3,1,3,3,3,1,4,3,3,1,0,1,1,1,4,1,1,4,3,3,3,0,0,3,3,3,3,0,1,0,1,0,0,3,3,0,3,4,3,3,3,3,2,1,3,1,3,3,4,2,3,0,0,3,2,3,0,0,3,0,3,3,0,1,3,3,0,3,0,0,0,0,4,3,1,3,2,2,2,3,0,3,3,3,4,4,1,2,1,1,1],"informatica":[0,0,0,3,2,5,0,4,5,5,3,4,4,5,0,3,3,4,4,4,4,4,4,3,3,1,3,0,0,4,4,0,1,0,2,3,0,0,0,3,1,4,3,4,0,5,0,3,2,0,4,3,0,1,0,1,0,0,0,0,3,2,0,0,0,5,3,4,1,3,3,0,0,0,1,4,4,1,4,0,3,0,0,3,0,3,3,0,0,2,1,1,4,0,0,4,0,4,4,2,0,3,0,0,4,0,0,1,1,0,0,5,4,1,0,5],"quadra":[2,0,0,0,0,2,2,1,1,1,0,2,1,1,1,1,1,1,1,1,1,0,0,1,2,2,0,2,0,1,2,0,0,0,1,0,0,1,2,0,1,1,2,0,0,1,0,1,1,1,2,1,1,1,0,1,1,1,1,1,0,1,0,2,0,2,2,0,1,1,1,1,0,0,1,2,2,1,2,2,1,0,1,1,0,1,1,0,0,0,1,0,1,1,1,2,2,1,2,1,0,1,0,1,2,0,1,1,1,0,0,1,2,1,1,1],"biblioteca":[1,0,0,0,0,0,0,1,1,1,0,1,1,1,0,0,0,0,0,1,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,1,1,0,0,0,1,0,0,0],"fechamento":[2,2,4,2,2,0,0,0,0,0,4,0,0,4,0,0,0,0,0,0,0,0,0,0,2,0,2,0,4,0,2,0,2,0,0,0,4,0,0,4,4,4,4,0,0,0,0,4,2,0,0,0,0,4,4,4,0,0,0,0,0,2,0,0,4,3,4,0,0,0,0,0,0,0,0,2,2,4,0,0,0,0,0,0,0,0,0,0,4,0,1,4,0,0,0,2,2,0,2,3,0,0,3,0,4,0,3,1,1,4,4,2,1,0,0,3],"materiais":[1,2,3,3,2,2,0,3,3,4,4,3,3,2,2,3,3,2,2,0,0,3,0,2,3,2,1,3,3,0,2,0,1,3,2,1,2,2,2,0,2,2,2,3,2,0,2,3,3,1,2,3,2,2,3,2,4,2,3,3,2,3,4,0,4,4,4,2,0,2,2,4,2,0,2,3,2,4,3,2,2,3,3,2,4,2,2,0,0,2,3,2,3,0,0,2,1,0,3,2,2,2,2,2,3,4,3,3,3,2,1,2,0,2,2,2],"formacaoProfessores":[2,2,2,2,1,2,0,1,0,0,2,1,1,0,1,1,1,1,1,0,0,0,0,2,2,0,1,1,2,2,1,1,1,1,0,0,2,1,2,2,0,1,2,1,1,1,1,1,1,2,0,1,2,0,1,2,1,2,1,1,0,1,2,2,2,2,2,2,0,2,2,1,2,1,1,1,0,0,2,0,1,2,1,1,2,2,0,0,0,0,1,0,1,1,1,0,2,0,1,0,0,1,2,1,2,1,1,1,1,2,2,1,0,0,1,1],"profQuilombolas":[0,6,6,1,1,6,3,0,3,3,6,5,0,2,0,1,1,0,0,6,6,1,1,1,2,6,1,0,6,6,2,0,0,0,2,3,6,6,6,6,2,3,6,0,0,0,0,0,1,0,5,0,3,2,6,2,0,4,1,1,4,1,6,6,6,0,0,0,3,1,0,0,0,6,2,1,1,0,1,0,1,0,0,1,0,1,1,3,3,4,0,6,7,1,1,1,0,1,1,3,4,1,6,1,2,0,0,0,0,0,6,1,2,1,1,1],"profComunidade":[0,1,0,7,7,7,4,0,1,1,7,1,0,5,0,0,2,4,4,2,2,1,1,3,1,5,1,0,0,3,4,0,0,0,5,5,0,0,0,7,2,2,7,0,0,0,0,7,1,0,5,0,2,2,0,2,0,5,1,1,5,1,0,7,0,2,2,0,2,0,0,0,7,7,2,1,2,2,1,0,3,0,0,3,0,3,3,3,3,5,0,3,0,1,1,2,0,3,1,5,3,0,7,0,2,0,0,0,0,0,7,1,3,1,1,0],"atividades":[64,17,25,65,107,32,46,128,47,111,2,17,4,8,64,256,256,3,3,87,87,91,91,16,1,8,123,256,25,37,127,7,47,9,39,39,28,28,24,32,31,37,4,20,144,32,36,1,256,2,8,8,40,17,256,25,256,4,25,1,15,256,15,48,32,14,6,256,3,1,48,2,256,1,127,256,15,1,128,2,14,4,-1,2,-1,2,2,127,127,2,1,37,256,23,19,2,1,43,256,35,31,9,38,11,256,128,1,1,1,-1,4,3,127,3,15,1],"areas":[14079,18,10,1,9,1,407,1,5,5,61,2047,1,5,43,16384,16384,64,64,206,206,111,111,2,2,81,11,16384,10,5,151,3,16384,2,319,39,15,13,7,1,2047,6143,16384,1,32,5,7,16384,57,16,1,16384,19,1600,16384,1602,16384,19,32,40,43,57,10,151,1,1,1,1,7,16384,19,16384,1,16384,7,16384,4,1,16384,61,4105,16384,256,4105,322,4105,4105,1751,535,407,1,401,16384,16384,16384,4,27,151,1,145,19,1,3,19,1,23,4157,1,1,7,15,5,135,5,1,2],"antirracista":[0,5,1,3,2,2,1,2,3,2,5,3,3,3,2,4,4,3,2,0,0,1,1,2,2,2,2,2,1,1,1,0,3,1,1,2,2,1,2,1,2,0,1,2,1,0,1,2,3,1,2,3,1,3,3,2,3,2,0,0,0,3,1,0,1,3,5,2,0,2,0,2,0,1,1,2,1,1,2,0,2,4,3,2,1,2,2,0,0,1,3,1,2,0,0,1,3,1,4,0,2,2,1,2,3,3,3,2,4,2,1,2,0,2,0,2],"racismoFrequencia":[3,1,4,3,1,2,4,4,4,0,3,2,4,3,4,5,5,5,5,4,4,5,5,5,2,2,3,2,4,4,2,2,4,0,3,3,4,5,3,0,4,5,0,0,2,0,3,2,5,0,5,0,5,4,5,3,5,3,4,5,4,3,0,1,3,5,3,1,0,3,0,5,3,0,1,3,2,2,3,4,4,5,5,4,2,3,1,1,0,2,5,1,4,4,4,2,3,4,1,2,1,5,0,3,0,1,4,3,5,0,0,5,3,0,0,0],"igualdadeMeninas":[3,5,0,4,4,1,3,2,5,5,4,5,2,5,1,0,1,3,3,2,3,4,3,4,5,5,4,1,0,5,3,2,2,3,5,2,4,4,5,5,3,3,4,1,5,0,3,3,1,5,3,2,2,4,3,3,2,3,2,2,5,3,4,5,5,4,4,4,5,3,5,4,2,5,4,5,1,4,5,2,4,3,3,5,5,5,3,5,5,5,3,5,5,5,4,2,0,4,5,2,4,0,3,2,5,5,2,3,3,4,5,3,5,3,5,1],"participacaoDecisoes":[3,1,1,2,1,1,0,3,0,0,4,3,3,1,0,3,3,2,2,1,2,3,3,1,4,3,1,3,2,4,3,3,3,3,0,1,2,1,4,4,0,2,3,3,3,3,0,2,3,3,3,3,2,1,3,4,3,0,2,3,1,2,2,3,3,4,3,2,4,3,2,1,2,0,1,3,2,1,4,1,1,4,3,0,3,1,1,0,0,0,3,0,4,2,2,1,0,2,3,0,4,3,0,4,3,4,3,2,3,4,4,2,3,3,2,3],"peDeMeia":[0,0,0,0,0,0,1,0,1,1,0,1,0,0,0,0,0,0,0,0,0,0,0,2,1,0,0,0,0,1,0,1,0,1,0,0,0,0,0,0,1,0,0,0,0,0,1,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,1,0,1,0,0,0,1,1,0,1,1,1,0,1,0,1,0,1,0,1,1,0,0,0,1,0,1,1,1,0,1,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,1],"obstaculos":[130,16385,4668,52175,57410,5184,8226,6143,3583,3551,12398,11679,6143,8706,17,8191,8191,16383,14335,13543,13543,931,13234,2080,32802,1779,59470,469,6196,256,18915,2572,12927,925,1074,13363,12,3080,2056,1024,12323,1603,512,16383,16,1089,1024,12663,49373,181,8191,527,4531,12577,6711,273,3310,1,2333,3037,4407,33501,8945,256,32,6511,4095,10086,65538,445,2383,65536,1024,9031,6111,3987,4160,79,1951,32872,1570,32,255,1026,128,568,540,8655,74,1155,32767,65536,11895,2556,2540,4097,333,11305,14,24066,1024,8845,2061,824,10197,12,64511,32767,32767,-1,65564,32855,8899,519,284,2462]},"agregados":{"faixaEtaria":[15,74,22,4],"turno":[38,26,14,38],"trabalho":[87,11,16,2]},"resumo":{"deficiencia":{"sim":5,"n":116},"abandono":{"sim":5,"n":116},"primeira":"2026-09-28","ultima":"2026-10-11","porDia":[["2026-09-28",8],["2026-09-29",6],["2026-09-30",12],["2026-10-01",1],["2026-10-02",4],["2026-10-03",4],["2026-10-04",1],["2026-10-05",3],["2026-10-06",12],["2026-10-07",17],["2026-10-08",11],["2026-10-09",34],["2026-10-10",2],["2026-10-11",1]],"ufs":19},"mapa":{"comunidade":[{"nome":"Cachoeira","uf":"BA","lat":-12.5994,"lon":-38.9587,"n":11},{"nome":"Salgueiro","uf":"PE","lat":-8.0737,"lon":-39.1247,"n":8},{"nome":"Adrianópolis","uf":"PR","lat":-24.6606,"lon":-48.9922,"n":6},{"nome":"Almas","uf":"TO","lat":-11.5706,"lon":-47.1792,"n":6},{"nome":"Oeiras do Pará","uf":"PA","lat":-2.0036,"lon":-49.8628,"n":5},{"nome":"Condeúba","uf":"BA","lat":-14.9022,"lon":-41.9718,"n":4},{"nome":"Campos dos Goytacazes","uf":"RJ","lat":-21.7622,"lon":-41.3181,"n":4},{"nome":"Eldorado","uf":"SP","lat":-24.5281,"lon":-48.1141,"n":4},{"nome":"Conde","uf":"PB","lat":-7.2575,"lon":-34.8999,"n":3},{"nome":"Alcântara","uf":"MA","lat":-2.3957,"lon":-44.4062,"n":3},{"nome":"Barreirinha","uf":"AM","lat":-2.7989,"lon":-57.0679,"n":3},{"nome":"Ipanguaçu","uf":"RN","lat":-5.4898,"lon":-36.8501,"n":3},{"nome":"Morro do Chapéu","uf":"BA","lat":-11.5488,"lon":-41.1565,"n":3},{"nome":"São Francisco do Conde","uf":"BA","lat":-12.6183,"lon":-38.6786,"n":3},{"nome":"União dos Palmares","uf":"AL","lat":-9.1592,"lon":-36.0223,"n":3},{"nome":"Jacaraci","uf":"BA","lat":-14.8541,"lon":-42.4329,"n":3},{"nome":"Poço Branco","uf":"RN","lat":-5.6223,"lon":-35.6635,"n":3},{"nome":"Paula Cândido","uf":"MG","lat":-20.8754,"lon":-42.9752,"n":3},{"nome":"Acará","uf":"PA","lat":-1.9538,"lon":-48.1985,"n":3},{"nome":"Capela","uf":"SE","lat":-10.5069,"lon":-37.0628,"n":3},{"nome":"Sabinópolis","uf":"MG","lat":-18.6653,"lon":-43.0752,"n":2},{"nome":"Arapiraca","uf":"AL","lat":-9.7549,"lon":-36.6615,"n":2},{"nome":"Barra do Bugres","uf":"MT","lat":-15.0702,"lon":-57.1878,"n":2},{"nome":"Porteiras","uf":"CE","lat":-7.5226,"lon":-39.114,"n":2},{"nome":"Bujaru","uf":"PA","lat":-1.5176,"lon":-48.0381,"n":2},{"nome":"Feira de Santana","uf":"BA","lat":-12.2664,"lon":-38.9663,"n":2},{"nome":"Itaóca","uf":"SP","lat":-24.6393,"lon":-48.8413,"n":2},{"nome":"Regeneração","uf":"PI","lat":-6.2312,"lon":-42.6842,"n":1},{"nome":"Santana","uf":"AP","lat":-0.0454,"lon":-51.1729,"n":1},{"nome":"Monção","uf":"MA","lat":-3.4813,"lon":-45.2496,"n":1},{"nome":"Banzaê","uf":"BA","lat":-10.5788,"lon":-38.6212,"n":1},{"nome":"Conceição da Barra","uf":"ES","lat":-18.5883,"lon":-39.7362,"n":1},{"nome":"Moraújo","uf":"CE","lat":-3.4631,"lon":-40.6776,"n":1},{"nome":"Porto Estrela","uf":"MT","lat":-15.3235,"lon":-57.2204,"n":1},{"nome":"Nossa Senhora do Livramento","uf":"MT","lat":-15.772,"lon":-56.3432,"n":1},{"nome":"Lapa","uf":"PR","lat":-25.7671,"lon":-49.7168,"n":1},{"nome":"Poconé","uf":"MT","lat":-16.266,"lon":-56.6261,"n":1},{"nome":"Salvaterra","uf":"PA","lat":-0.7584,"lon":-48.5139,"n":1},{"nome":"Pinheiro","uf":"MA","lat":-2.5222,"lon":-45.0788,"n":1},{"nome":"Iporanga","uf":"SP","lat":-24.5847,"lon":-48.5971,"n":1},{"nome":"Bagre","uf":"PA","lat":-1.9006,"lon":-50.1987,"n":1},{"nome":"Rio Claro","uf":"RJ","lat":-22.72,"lon":-44.1419,"n":1}],"escola":[{"nome":"Cachoeira","uf":"BA","lat":-12.5994,"lon":-38.9587,"n":11},{"nome":"Salgueiro","uf":"PE","lat":-8.0737,"lon":-39.1247,"n":8},{"nome":"Adrianópolis","uf":"PR","lat":-24.6606,"lon":-48.9922,"n":6},{"nome":"Jacaraci","uf":"BA","lat":-14.8541,"lon":-42.4329,"n":6},{"nome":"Almas","uf":"TO","lat":-11.5706,"lon":-47.1792,"n":6},{"nome":"Oeiras do Pará","uf":"PA","lat":-2.0036,"lon":-49.8628,"n":5},{"nome":"Campos dos Goytacazes","uf":"RJ","lat":-21.7622,"lon":-41.3181,"n":4},{"nome":"Eldorado","uf":"SP","lat":-24.5281,"lon":-48.1141,"n":4},{"nome":"Alcântara","uf":"MA","lat":-2.3957,"lon":-44.4062,"n":3},{"nome":"Barreirinha","uf":"AM","lat":-2.7989,"lon":-57.0679,"n":3},{"nome":"Ipanguaçu","uf":"RN","lat":-5.4898,"lon":-36.8501,"n":3},{"nome":"Arapiraca","uf":"AL","lat":-9.7549,"lon":-36.6615,"n":3},{"nome":"União dos Palmares","uf":"AL","lat":-9.1592,"lon":-36.0223,"n":3},{"nome":"Barra do Bugres","uf":"MT","lat":-15.0702,"lon":-57.1878,"n":3},{"nome":"Paula Cândido","uf":"MG","lat":-20.8754,"lon":-42.9752,"n":3},{"nome":"Acará","uf":"PA","lat":-1.9538,"lon":-48.1985,"n":3},{"nome":"Porteiras","uf":"CE","lat":-7.5226,"lon":-39.114,"n":3},{"nome":"Capela","uf":"SE","lat":-10.5069,"lon":-37.0628,"n":3},{"nome":"Itaóca","uf":"SP","lat":-24.6393,"lon":-48.8413,"n":3},{"nome":"João Pessoa","uf":"PB","lat":-7.1151,"lon":-34.8641,"n":2},{"nome":"Sabinópolis","uf":"MG","lat":-18.6653,"lon":-43.0752,"n":2},{"nome":"Morro do Chapéu","uf":"BA","lat":-11.5488,"lon":-41.1565,"n":2},{"nome":"Candeias","uf":"BA","lat":-12.6716,"lon":-38.5472,"n":2},{"nome":"Condeúba","uf":"BA","lat":-14.9022,"lon":-41.9718,"n":2},{"nome":"Bujaru","uf":"PA","lat":-1.5176,"lon":-48.0381,"n":2},{"nome":"Feira de Santana","uf":"BA","lat":-12.2664,"lon":-38.9663,"n":2},{"nome":"Regeneração","uf":"PI","lat":-6.2312,"lon":-42.6842,"n":1},{"nome":"Conde","uf":"PB","lat":-7.2575,"lon":-34.8999,"n":1},{"nome":"Santana","uf":"AP","lat":-0.0454,"lon":-51.1729,"n":1},{"nome":"Pindaré-Mirim","uf":"MA","lat":-3.6098,"lon":-45.342,"n":1},{"nome":"Banzaê","uf":"BA","lat":-10.5788,"lon":-38.6212,"n":1},{"nome":"Conceição da Barra","uf":"ES","lat":-18.5883,"lon":-39.7362,"n":1},{"nome":"Moraújo","uf":"CE","lat":-3.4631,"lon":-40.6776,"n":1},{"nome":"João Câmara","uf":"RN","lat":-5.5409,"lon":-35.8122,"n":1},{"nome":"Ceará-Mirim","uf":"RN","lat":-5.6432,"lon":-35.4247,"n":1},{"nome":"Várzea Grande","uf":"MT","lat":-15.6458,"lon":-56.1322,"n":1},{"nome":"Lapa","uf":"PR","lat":-25.7671,"lon":-49.7168,"n":1},{"nome":"América Dourada","uf":"BA","lat":-11.4429,"lon":-41.439,"n":1},{"nome":"Cuiabá","uf":"MT","lat":-15.601,"lon":-56.0974,"n":1},{"nome":"Salvaterra","uf":"PA","lat":-0.7584,"lon":-48.5139,"n":1},{"nome":"Pinheiro","uf":"MA","lat":-2.5222,"lon":-45.0788,"n":1},{"nome":"Poço Branco","uf":"RN","lat":-5.6223,"lon":-35.6635,"n":1},{"nome":"São Francisco do Conde","uf":"BA","lat":-12.6183,"lon":-38.6786,"n":1},{"nome":"Bagre","uf":"PA","lat":-1.9006,"lon":-50.1987,"n":1},{"nome":"Rio Claro","uf":"RJ","lat":-22.72,"lon":-44.1419,"n":1}],"semLocalComunidade":3,"semLocalEscola":0}};
+if (typeof L==='undefined' || typeof Chart==='undefined'){
+  document.body.insertAdjacentHTML('afterbegin','<div class="caixa-aviso" style="margin:16px"><strong class="titulo">Não foi possível carregar o painel</strong>As bibliotecas de mapa e gráficos não carregaram (conexão instável ou bloqueio de rede). Recarregue a página.</div>');
+  throw new Error('Leaflet/Chart.js indisponíveis');
+}
+const K = P.minimoGrupo;
+const VARS = {}; P.vars.forEach(v => VARS[v.k] = v);
+const LINHA = P.vars.filter(v => !v.agregado);           // variáveis que vêm pessoa a pessoa
+const DADOS = Array.from({length:P.n}, (_, i) => {
+  const r = {};
+  LINHA.forEach(v => r[v.k] = P.colunas[v.k][i]);
+  return r;
+});
+
+const $ = id => document.getElementById(id);
+const fmt = n => (n == null ? 0 : n).toLocaleString('pt-BR');
+const pctTxt = (a, b) => b ? (100*a/b).toFixed(1).replace('.', ',') + '%' : '—';
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const UF_NOMES = {AC:'Acre',AL:'Alagoas',AP:'Amapá',AM:'Amazonas',BA:'Bahia',CE:'Ceará',DF:'Distrito Federal',ES:'Espírito Santo',
+  GO:'Goiás',MA:'Maranhão',MT:'Mato Grosso',MS:'Mato Grosso do Sul',MG:'Minas Gerais',PA:'Pará',PB:'Paraíba',PR:'Paraná',
+  PE:'Pernambuco',PI:'Piauí',RJ:'Rio de Janeiro',RN:'Rio Grande do Norte',RS:'Rio Grande do Sul',RO:'Rondônia',RR:'Roraima',
+  SC:'Santa Catarina',SP:'São Paulo',SE:'Sergipe',TO:'Tocantins'};
+
+/* Rótulo de uma categoria: a versão curta, quando existe (as opções do formulário
+   chegam a ter 70 caracteres e não cabem numa legenda), senão o texto original. */
+const rotulo = (v, i) => (v.curtos && v.curtos[i]) || (v.k==='uf' && UF_NOMES[v.ordem[i]] ? `${v.ordem[i]} · ${UF_NOMES[v.ordem[i]]}` : v.ordem[i]);
+/* Índices das categorias que uma pessoa escolheu nessa pergunta. */
+function marcadas(v, val){
+  if (val == null || val < 0) return [];
+  if (v.tipo !== 'multipla') return [val];
+  const out = [];
+  for (let i = 0; i < v.ordem.length; i++) if (val & (1 << i)) out.push(i);
+  return out;
+}
+
+/* ==================== CORES ====================
+   Três trabalhos diferentes, três regras diferentes:
+   - categoria sem ordem (gênero, raça, série): cores de identidade, numa ordem
+     fixa testada para daltonismo. A cor segue a categoria, não a posição: "Parda"
+     tem sempre a mesma cor, em qualquer gráfico e com qualquer filtro;
+   - resposta com sentido (do favorável ao desfavorável ao direito): verde ↔
+     terracota, com cinza no meio;
+   - quantidade (nº de professoras/es quilombolas): um só verde, do claro ao escuro.
+   "Não sei" e "Não se aplica" ficam num cinza claro, fora da escala. */
+const CAT = ['#2E8540','#2F6FC4','#D06A2C','#9B4F9E','#B88600','#0E8FA0','#C8436B','#6A7F00'];
+const TOM = {P:'#24502E', q:'#4E8A58', p:'#86B38C', '0':'#A8A196', n:'#D98E66', m:'#B85A35', N:'#86341A', '?':'#D9D4CA'};
+const SEQ = ['#8DB890','#6E9F73','#558E5C','#3A7344','#24582F','#123A1C'];
+const DIV6 = ['#86341A','#B85A35','#D98E66','#86B38C','#4E8A58','#24502E'];
+const DIV5 = ['#86341A','#D98E66','#A8A196','#86B38C','#24502E'];
+const COR_BARRA = '#3B5D42', COR_NENHUMA = '#B85A35', COR_OUTRA = '#A8A196';
+const cacheCores = {};
+function coresDe(v){
+  if (cacheCores[v.k]) return cacheCores[v.k];
+  let cores;
+  if (v.tipo === 'escala'){
+    const base = v.ordem.length === 6 ? DIV6 : DIV5.slice(0, v.ordem.length);
+    cores = v.polaridade === -1 ? base.slice().reverse() : base;
+  } else {
+    const tons = v.tons || '';
+    let c = 0, s = 0;
+    const nS = (tons.match(/s/g) || []).length;
+    cores = v.ordem.map((_, i) => {
+      const t = tons[i];
+      if (t === 'c') return CAT[(c++) % CAT.length];
+      if (t === 's') { const idx = Math.round(s++ * (SEQ.length-1) / Math.max(1, nS-1)); return SEQ[idx]; }
+      return TOM[t] || TOM['?'];
+    });
+  }
+  return cacheCores[v.k] = cores;
+}
+/* texto escuro em fundo claro, claro em fundo escuro (luminância relativa) */
+function corTexto(hex){
+  const n = parseInt(hex.slice(1), 16), r = n>>16, g = (n>>8)&255, b = n&255;
+  const lin = c => { c /= 255; return c <= .03928 ? c/12.92 : Math.pow((c+.055)/1.055, 2.4); };
+  return (.2126*lin(r) + .7152*lin(g) + .0722*lin(b)) > .33 ? '#2E271F' : '#FFFFFF';
+}
+
+/* ==================== TEXTOS DOS BLOCOS ==================== */
+const BLOCO_TEXTO = {
+  perfil: 'Quem são as e os estudantes que responderam. Identidade de gênero, raça/cor e série mudam com os filtros. Faixa etária, turno e trabalho aparecem só como total da base inteira (veja a nota de privacidade no fim da página).',
+  territorio: 'A relação de quem respondeu com a comunidade, a associação e a CONAQ.',
+  acesso: 'Onde fica a escola, se ela reconhece a e o estudante quilombola, e o caminho até ela.',
+  estrutura: 'Como estudantes percebem as condições da escola: acessibilidade, merenda, informática, esporte, leitura e fechamento de turmas.',
+  identidade: 'Se a história, a cultura e os saberes quilombolas estão no currículo, nos materiais e no corpo docente.',
+  racismo: 'Como a escola enfrenta o racismo, se meninas e meninos têm as mesmas oportunidades e se a comunidade participa das decisões.',
+  obstaculos: 'A pergunta final do diagnóstico: na experiência de cada estudante, o que impede o direito à Educação Escolar Quilombola no seu território. Cada pessoa podia indicar mais de um obstáculo.',
+};
+/* perguntas que ocupam a largura toda (listas longas) */
+const LARGAS = new Set(['obstaculos','atividades','areas','informatica','materiais']);
+
+/* ==================== FILTROS ==================== */
+const FILTROS = ['regiao','uf','genero','raca','serie','escolaTerritorio','moraComunidade'];
+const ROT_FILTRO = {regiao:'Região',uf:'UF da comunidade',genero:'Identidade de gênero',raca:'Raça/cor',serie:'Série/ano',
+  escolaTerritorio:'Escola em território quilombola',moraComunidade:'Mora em comunidade quilombola'};
+const filtros = {}; FILTROS.forEach(k => filtros[k] = '');
+let visiveis = DADOS;
+
+function montaFiltros(){
+  const caixa = $('caixaFiltros');
+  FILTROS.forEach(k => {
+    const v = VARS[k]; if (!v) return;
+    const presentes = new Set(DADOS.map(r => r[k]).filter(x => x >= 0));
+    const opcoes = v.ordem.map((_, i) => i).filter(i => presentes.has(i));
+    const d = document.createElement('div'); d.className = 'campo';
+    d.innerHTML = `<label for="f_${k}">${esc(ROT_FILTRO[k])}</label><select id="f_${k}"><option value="">Todas as respostas</option>` +
+      opcoes.map(i => `<option value="${i}">${esc(rotulo(v, i))}</option>`).join('') + `</select>`;
+    caixa.appendChild(d);
+    d.querySelector('select').addEventListener('change', e => { filtros[k] = e.target.value; atualiza(); });
+  });
+  const d = document.createElement('div'); d.className = 'campo';
+  d.innerHTML = '<label>&nbsp;</label><button class="btn-limpar" id="btnLimpar">Limpar filtros</button>';
+  caixa.appendChild(d);
+  $('btnLimpar').addEventListener('click', () => {
+    FILTROS.forEach(k => { filtros[k] = ''; const s = $('f_'+k); if (s) s.value = ''; });
+    atualiza();
+  });
+}
+function aplicaFiltros(){
+  const ativos = FILTROS.filter(k => filtros[k] !== '');
+  visiveis = DADOS.filter(r => ativos.every(k => r[k] === +filtros[k]));
+}
+/* Recorte pequeno demais: não mostramos nada, para que ninguém consiga, combinando
+   filtros, isolar as respostas de uma pessoa. */
+const protegido = () => visiveis.length < K;
+
+/* ==================== CONTAGENS ==================== */
+function distribuicao(v, arr){
+  if (v.agregado){
+    const cont = P.agregados[v.k] || [];
+    return {cont, n: cont.reduce((a, b) => a + b, 0), pessoas: cont.reduce((a, b) => a + b, 0)};
+  }
+  const cont = new Array(v.ordem.length).fill(0);
+  let n = 0;
+  arr.forEach(r => { const m = marcadas(v, r[v.k]); if (m.length){ n++; m.forEach(i => cont[i]++); } });
+  return {cont, n};
+}
+const valorEscala = (v, i) => +v.ordem[i];
+function media(v, d){
+  let s = 0, n = 0;
+  d.cont.forEach((c, i) => { s += c * valorEscala(v, i); n += c; });
+  return n ? s/n : null;
+}
+
+/* ==================== SÍNTESE ==================== */
+const CARTOES = [
+  {k:'reconhecidoEscola', cats:['Sim'], rot:'são reconhecidas/os como quilombolas na escola'},
+  {k:'formacaoProfessores', cats:['Não'], rot:'dizem que professoras/es não recebem formação em Educação Escolar Quilombola'},
+  {k:'materiais', cats:['Não possui'], rot:'dizem que a escola não tem material didático sobre história e cultura quilombola'},
+  {k:'dificuldadeTransporte', cats:['Sim'], rot:'relatam dificuldade de estudantes quilombolas com o transporte escolar'},
+  {k:'racismoFrequencia', cats:['4','5'], rot:'presenciam racismo ou discriminação na escola com frequência (nota 4 ou 5, numa escala de 0 a 5)'},
+  {k:'participacaoDecisoes', cats:['Não participa'], rot:'dizem que a comunidade não participa das decisões sobre a escola'},
+  {k:'escolaTerritorio', cats:['Sim'], rot:'estudam em escola localizada em território quilombola'},
+];
+function renderIndicadores(){
+  if (protegido()){ $('indicadores').innerHTML = avisoProtecao(); return; }
+  const cards = [[fmt(visiveis.length), 'respostas no recorte', visiveis.length === DADOS.length ? 'base inteira' : `de ${fmt(DADOS.length)} no total`, false]];
+  CARTOES.forEach(c => {
+    const v = VARS[c.k]; if (!v) return;
+    const d = distribuicao(v, visiveis);
+    const sim = v.ordem.reduce((t, cat, i) => t + (c.cats.includes(cat) ? d.cont[i] : 0), 0);
+    cards.push([pctTxt(sim, d.n), c.rot, d.n ? `${fmt(sim)} de ${fmt(d.n)} que responderam` : 'ninguém respondeu no recorte', false]);
+  });
+  const vo = VARS.obstaculos;
+  if (vo){
+    const d = distribuicao(vo, visiveis);
+    const ordem = d.cont.map((c, i) => [c, i]).filter(([, i]) => vo.ordem[i] !== 'Outra resposta').sort((a, b) => b[0] - a[0]);
+    if (ordem.length && ordem[0][0] > 0)
+      cards.push([esc(rotulo(vo, ordem[0][1])), 'é o obstáculo mais citado ao direito à Educação Escolar Quilombola',
+        `marcado por ${pctTxt(ordem[0][0], d.n)} de quem respondeu (${fmt(ordem[0][0])} de ${fmt(d.n)})`, true]);
+  }
+  $('indicadores').innerHTML = cards.map(c =>
+    `<div class="indicador"><div class="valor${c[3]?' texto':''}">${c[0]}</div><div class="rotulo">${c[1]}</div><div class="nota">${c[2]}</div></div>`).join('');
+}
+function avisoProtecao(){
+  return `<div class="aviso-protecao" style="grid-column:1/-1"><strong>Este recorte tem ${fmt(visiveis.length)} resposta(s), menos de ${K}.</strong>
+    Para proteger quem respondeu, recortes tão pequenos não mostram resultados: com tão poucas pessoas, seria possível descobrir o que uma estudante específica respondeu. Tire um dos filtros para ampliar o recorte.</div>`;
+}
+
+/* ==================== PERGUNTAS ==================== */
+function htmlPergunta(v){
+  const d = distribuicao(v, visiveis);
+  const texto = P.perguntas[v.k] ? `<div class="perg-texto">${esc(P.perguntas[v.k])}</div>` : '';
+  const selo = v.agregado ? '<span class="selo">Total da base inteira · não muda com os filtros</span>' : '';
+  const nTxt = v.tipo === 'multipla' ? `${fmt(d.n)} responderam` : `n = ${fmt(d.n)}`;
+  const cruzar = v.agregado ? '' : `<button class="btn-link" data-cruzar="${v.k}">Cruzar esta pergunta ↓</button>`;
+  let corpo = '';
+  if (!d.n) corpo = '<p class="nota-metodo">Ninguém respondeu a esta pergunta no recorte atual.</p>';
+  else if (v.tipo === 'multipla') corpo = htmlMultipla(v, d);
+  else corpo = htmlBarra100(v, d);
+  return `<article class="pergunta${LARGAS.has(v.k)?' larga':''}">
+    <div class="perg-topo"><h3 class="perg-titulo">${esc(v.rot)}</h3><span class="perg-n">${nTxt}</span></div>
+    ${texto}${selo}${corpo}
+    <div class="perg-rodape"><span>${v.tipo==='multipla'?'Cada pessoa podia marcar mais de uma opção; os percentuais somam mais de 100%.':''}</span>${cruzar}</div>
+  </article>`;
+}
+/* Barra única, dividida em partes que somam 100%. O rótulo só entra dentro do
+   segmento quando cabe; o valor de todos os segmentos fica sempre na legenda
+   logo abaixo, que é também a versão em texto do gráfico. */
+function htmlBarra100(v, d){
+  const cores = coresDe(v);
+  const idx = v.ordem.map((_, i) => i).filter(i => d.cont[i] > 0);
+  const segs = idx.map(i => {
+    const p = 100*d.cont[i]/d.n, cor = cores[i];
+    const dica = `${rotulo(v, i)}: ${pctTxt(d.cont[i], d.n)} (${fmt(d.cont[i])} de ${fmt(d.n)})`;
+    return `<div class="seg" tabindex="0" style="flex:${d.cont[i]} 1 0;background:${cor};color:${corTexto(cor)}" data-dica="${esc(dica)}" aria-label="${esc(dica)}">${p >= 9 ? Math.round(p)+'%' : ''}</div>`;
+  }).join('');
+  let extra = '';
+  if (v.tipo === 'escala'){
+    const m = media(v, d);
+    extra = `<div class="perg-media">Nota média: <strong>${m==null?'—':m.toFixed(1).replace('.', ',')}</strong> numa escala de ${v.min} a ${v.max}</div>`;
+  }
+  const extremos = v.tipo === 'escala' && v.extremos
+    ? `<div class="extremos"><span>${v.min} · ${esc(v.extremos[0])}</span><span>${esc(v.extremos[1])} · ${v.max}</span></div>` : '';
+  const leg = idx.map(i => `<li><span class="sw" style="background:${cores[i]}"></span><span class="lg-rot">${esc(rotulo(v, i))}</span>
+      <span class="lg-val">${pctTxt(d.cont[i], d.n)} <small>(${fmt(d.cont[i])})</small></span></li>`).join('');
+  return `${extra}<div class="barra100" aria-hidden="false">${segs}</div>${extremos}<ul class="legenda-perg">${leg}</ul>`;
+}
+/* Múltipla escolha: uma barra por opção, da mais à menos marcada. "Outra resposta"
+   vai sempre por último. Opções do tipo "nenhuma" ganham terracota: não são mais
+   uma atividade da lista, são a ausência delas. O trilho cinza é 100% de quem
+   respondeu: uma barra pela metade quer dizer metade das pessoas. */
+function htmlMultipla(v, d){
+  const idx = v.ordem.map((_, i) => i).filter(i => d.cont[i] > 0)
+    .sort((a, b) => (v.ordem[a]==='Outra resposta') - (v.ordem[b]==='Outra resposta') || d.cont[b] - d.cont[a]);
+  return `<div class="barras-h">` + idx.map(i => {
+    const nome = v.ordem[i];
+    const cor = /nenhum|nenhuma|datas comemorativas/i.test(nome) ? COR_NENHUMA : (nome === 'Outra resposta' ? COR_OUTRA : COR_BARRA);
+    const dica = `${rotulo(v, i)}: ${pctTxt(d.cont[i], d.n)} de quem respondeu (${fmt(d.cont[i])} de ${fmt(d.n)})`;
+    return `<div class="bh"><span class="bh-rot">${esc(rotulo(v, i))}</span>
+      <div class="bh-trilho"><div class="bh-barra" tabindex="0" style="width:${100*d.cont[i]/d.n}%;background:${cor}" data-dica="${esc(dica)}" aria-label="${esc(dica)}"></div></div>
+      <span class="bh-val">${pctTxt(d.cont[i], d.n)} <small>(${fmt(d.cont[i])})</small></span></div>`;
+  }).join('') + `</div>`;
+}
+function montaBlocos(){
+  const nav = [['#sintese','Síntese'],['#coleta','Territórios']];
+  $('blocos').innerHTML = P.blocos.map(([b, titulo], n) => {
+    nav.push(['#bloco-'+b, titulo]);
+    return `<section class="bloco" id="bloco-${b}"><div class="container">
+      <div class="secao-cabecalho"><div><div class="rotulo">Eixo ${n+1}</div><h2>${esc(titulo)}</h2>
+      <p class="descricao">${esc(BLOCO_TEXTO[b]||'')}</p></div></div>
+      <div class="grade-perguntas" id="grade-${b}"></div>
+      ${b==='perfil' ? '<div class="tiles-agregados" id="tilesAgregados"></div>' : ''}
+    </div></section>`;
+  }).join('');
+  nav.push(['#cruzador','Cruzamentos'],['#metodo','Metodologia e privacidade']);
+  $('navegacao').innerHTML = nav.map(([h, t]) => `<a href="${h}">${esc(t)}</a>`).join('');
+  renderAgregadosFixos();
+}
+function renderBlocos(){
+  P.blocos.forEach(([b]) => {
+    const grade = $('grade-'+b);
+    if (protegido()){ grade.innerHTML = avisoProtecao(); return; }
+    grade.innerHTML = P.vars.filter(v => v.bloco === b).map(htmlPergunta).join('');
+  });
+}
+/* Deficiência e abandono escolar: só o total nacional (ver a nota de privacidade). */
+function renderAgregadosFixos(){
+  const r = P.resumo, tiles = [];
+  const t = (x, rot, nota) => {
+    if (!x || !x.n) return;
+    const num = x.sim < K && x.sim > 0 ? `menos de ${K}` : pctTxt(x.sim, x.n);
+    const conta = x.sim < K && x.sim > 0 ? `de ${fmt(x.n)} respostas` : `${fmt(x.sim)} de ${fmt(x.n)} respostas`;
+    tiles.push(`<div class="tile-agregado"><div class="num">${num}</div><div>${rot}</div><div class="nota-metodo">${conta} · ${nota}</div></div>`);
+  };
+  t(r.deficiencia, 'informaram ter algum tipo de deficiência', 'total da base inteira; o tipo de deficiência não é publicado');
+  t(r.abandono, 'já precisaram abandonar a escola em algum momento', 'total da base inteira; o motivo não é publicado');
+  $('tilesAgregados').innerHTML = tiles.join('');
+}
+
+/* ==================== DICA (tooltip) ==================== */
+function ligaDicas(){
+  const dica = $('dica');
+  const mostra = (alvo, x, y) => {
+    dica.textContent = alvo.dataset.dica; dica.classList.add('visivel');
+    const w = dica.offsetWidth, h = dica.offsetHeight;
+    dica.style.left = Math.min(window.innerWidth - w - 8, Math.max(8, x - w/2)) + 'px';
+    dica.style.top = (y - h - 12 < 4 ? y + 18 : y - h - 12) + 'px';
+  };
+  document.addEventListener('mousemove', e => {
+    const alvo = e.target.closest('[data-dica]');
+    if (alvo) mostra(alvo, e.clientX, e.clientY); else dica.classList.remove('visivel');
+  });
+  document.addEventListener('focusin', e => {
+    const alvo = e.target.closest('[data-dica]'); if (!alvo) return;
+    const b = alvo.getBoundingClientRect(); mostra(alvo, b.left + b.width/2, b.top);
+  });
+  document.addEventListener('focusout', () => dica.classList.remove('visivel'));
+  document.addEventListener('scroll', () => dica.classList.remove('visivel'), {passive:true});
+}
+
+/* ==================== COLETA: RESPOSTAS POR DIA ==================== */
+const graficos = {};
+function desenha(id, cfg){ if (graficos[id]) graficos[id].destroy(); graficos[id] = new Chart($(id), cfg); }
+function renderDias(){
+  const pd = P.resumo.porDia || [];
+  if (!pd.length){ $('notaDias').textContent = 'Sem datas de envio na planilha.'; return; }
+  // completa os dias sem resposta com zero, para o eixo do tempo não mentir
+  const mapa = new Map(pd), dias = [];
+  const d0 = new Date(pd[0][0]+'T12:00:00'), d1 = new Date(pd[pd.length-1][0]+'T12:00:00');
+  for (let d = new Date(d0); d <= d1; d.setDate(d.getDate()+1)) dias.push(d.toISOString().slice(0,10));
+  const vals = dias.map(d => mapa.get(d) || 0);
+  let acc = 0; const acum = vals.map(v => acc += v);
+  const rot = dias.map(d => d.slice(8,10)+'/'+d.slice(5,7));
+  desenha('graficoDias', {type:'bar',
+    data:{labels:rot, datasets:[{label:'Respostas no dia', data:vals, backgroundColor:COR_BARRA, borderRadius:{topLeft:4,topRight:4}, maxBarThickness:42}]},
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}, tooltip:{callbacks:{label:c => ` ${fmt(c.parsed.y)} resposta(s) no dia`, afterLabel:c => ` ${fmt(acum[c.dataIndex])} no total até aqui`}}},
+      scales:{x:{grid:{display:false}}, y:{beginAtZero:true, ticks:{precision:0}, title:{display:true, text:'respostas por dia'}}}}});
+  const pico = vals.indexOf(Math.max(...vals));
+  $('notaDias').textContent = `${fmt(acc)} respostas entre ${rot[0]} e ${rot[rot.length-1]}. O dia com mais respostas foi ${rot[pico]} (${fmt(vals[pico])}).`;
+}
+
+/* ==================== MAPA ==================== */
+let mapa, camada;
+function initMapa(){
+  mapa = L.map('mapa', {preferCanvas:true, minZoom:3}).setView([-12.5,-50],4);
+  const bases = {
+    'Claro': L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap &middot; &copy; CARTO'}),
+    'Ruas': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}),
+    'Satélite': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Imagens &copy; Esri'})};
+  bases['Claro'].addTo(mapa);
+  L.control.layers(bases, null, {position:'topright'}).addTo(mapa);
+  L.control.scale({imperial:false}).addTo(mapa);
+  camada = L.featureGroup().addTo(mapa);
+  renderMapa();
+  $('mapaBase').addEventListener('change', renderMapa);
+}
+function renderMapa(){
+  camada.clearLayers();
+  const qual = $('mapaBase').value, lista = P.mapa[qual] || [];
+  const sem = qual === 'comunidade' ? P.mapa.semLocalComunidade : P.mapa.semLocalEscola;
+  // raio pela raiz quadrada: é a ÁREA do círculo que cresce com o nº de respostas
+  const maior = Math.max(1, ...lista.map(m => m.n));
+  lista.forEach(m => {
+    const c = L.circleMarker([m.lat, m.lon], {radius:5 + 14*Math.sqrt(m.n/maior), weight:2, color:'#FBF6EA', fillColor:COR_BARRA, fillOpacity:.75});
+    c.bindTooltip(`${esc(m.nome)} (${m.uf}) · ${fmt(m.n)} resposta(s)`, {className:'ponto-tooltip'});
+    c.bindPopup(`<strong>${esc(m.nome)} (${m.uf})</strong><br>${fmt(m.n)} resposta(s) de estudantes ${qual==='comunidade'?'desta comunidade':'de escolas deste município'}.<br><span style="color:#6E624F;font-size:12.5px">Posição: centro do município.</span>`);
+    camada.addLayer(c);
+  });
+  try { const b = camada.getBounds(); if (b.isValid()) mapa.fitBounds(b, {padding:[24,24], maxZoom:7}); } catch(e){}
+  const total = lista.reduce((t, m) => t + m.n, 0);
+  $('notaMapa').textContent = `${fmt(lista.length)} municípios, ${fmt(total)} respostas no mapa.` +
+    (sem ? ` ${fmt(sem)} resposta(s) não entram no mapa porque o município escrito no formulário não foi reconhecido.` : '');
+}
+
+/* ==================== CRUZADOR ==================== */
+let ultimoCruzamento = null;
+function opcoesVars(sel, incluirNenhuma, filtro){
+  let html = incluirNenhuma ? '<option value="">(nenhuma)</option>' : '';
+  [['local','Localização']].concat(P.blocos).forEach(([b, t]) => {
+    const vs = LINHA.filter(v => v.bloco === b && (!filtro || filtro(v)));
+    if (vs.length) html += `<optgroup label="${esc(t)}">` + vs.map(v => `<option value="${v.k}">${esc(v.rot)}</option>`).join('') + '</optgroup>';
+  });
+  sel.innerHTML = html;
+}
+function renderCruzador(){
+  const A = VARS[$('cruzA').value], B = $('cruzB').value ? VARS[$('cruzB').value] : null;
+  let modo = $('cruzModo').value;
+  const E = VARS[$('cruzEscala').value];
+  $('linhaCruzEscala').style.display = modo === 'media' ? '' : 'none';
+  $('cruzB').disabled = modo === 'media';
+  const limpa = msg => {
+    $('cabecalhoCruzador').innerHTML = ''; $('corpoCruzador').innerHTML = '';
+    if (graficos.graficoCruzador){ graficos.graficoCruzador.destroy(); delete graficos.graficoCruzador; }
+    $('caixaGraficoCruz').style.height = '0px';
+    $('notaCruzador').textContent = msg; ultimoCruzamento = null;
+  };
+  if (protegido()) return limpa(`O recorte atual tem menos de ${K} respostas; amplie os filtros para cruzar.`);
+  const usaB = modo !== 'media' && B && B.k !== A.k ? B : null;
+  // contagens: linha a (categoria de A) × coluna b (categoria de B)
+  const linhas = A.ordem.map(() => ({n:0, cel:B ? new Array(usaB ? usaB.ordem.length : 1).fill(0) : [0], soma:0, nm:0}));
+  visiveis.forEach(r => {
+    const as = marcadas(A, r[A.k]); if (!as.length) return;
+    if (modo === 'media'){
+      const e = marcadas(E, r[E.k]); if (!e.length) return;
+      as.forEach(a => { linhas[a].n++; linhas[a].soma += valorEscala(E, e[0]); linhas[a].nm++; });
+      return;
+    }
+    if (usaB){
+      const bs = marcadas(usaB, r[usaB.k]); if (!bs.length) return;   // % sobre quem respondeu às duas
+      as.forEach(a => { linhas[a].n++; bs.forEach(b => linhas[a].cel[b]++); });
+    } else as.forEach(a => { linhas[a].n++; linhas[a].cel[0]++; });
+  });
+  const cats = A.ordem.map((_, i) => i).filter(i => linhas[i].n > 0);
+  const exibidas = cats.filter(i => linhas[i].n >= K), ocultas = cats.filter(i => linhas[i].n < K);
+  if (!exibidas.length) return limpa(`Nenhuma linha tem ${K} respostas ou mais neste recorte.`);
+  let series = usaB ? usaB.ordem.map((_, j) => j).filter(j => exibidas.some(i => linhas[i].cel[j] > 0)) : [0];
+  const multiB = usaB && usaB.tipo === 'multipla';
+  const valor = (i, j) => modo === 'contagem' ? linhas[i].cel[j]
+    : modo === 'pct' ? 100*linhas[i].cel[j]/linhas[i].n
+    : (linhas[i].nm ? linhas[i].soma/linhas[i].nm : null);
+  if (modo === 'media') series = [0];
+
+  /* gráfico: barras horizontais (os rótulos das perguntas são longos). Empilha
+     quando as partes formam um todo: B de resposta única, em contagem ou %.
+     Com B de múltipla escolha as partes somam mais que o total, e empilhar
+     inventaria um número que não existe. */
+  const empilha = !!usaB && !multiB && modo !== 'media';
+  const coresB = usaB ? coresDe(usaB) : null;
+  const datasets = series.map(j => ({
+    label: usaB ? rotulo(usaB, j) : (modo === 'media' ? 'Nota média' : (modo === 'pct' ? '% das respostas' : 'Respostas')),
+    data: exibidas.map(i => valor(i, j)),
+    backgroundColor: usaB ? coresB[j] : COR_BARRA, borderColor:'#FFFFFF', borderWidth: empilha ? {right:2} : 0,
+    borderRadius: empilha ? 0 : 4, maxBarThickness: 34}));
+  const altura = Math.max(180, exibidas.length * (usaB && !empilha ? Math.min(24*series.length, 90) : 38) + (usaB ? 90 : 60));
+  $('caixaGraficoCruz').style.height = altura + 'px';
+  const unidade = modo === 'contagem' ? 'respostas' : modo === 'pct' ? (usaB ? '% dentro de cada linha' : '% das respostas') : `nota média (${E.min} a ${E.max})`;
+  const fv = v => v == null ? '—' : modo === 'contagem' ? fmt(v) : v.toFixed(1).replace('.', ',') + (modo === 'pct' ? '%' : '');
+  // sem B, "% dentro de cada linha" seria sempre 100%: vira a distribuição de A
+  if (!usaB && modo === 'pct'){
+    const tot = exibidas.reduce((t, i) => t + linhas[i].n, 0);
+    datasets[0].data = exibidas.map(i => 100*linhas[i].n/tot);
+  }
+  desenha('graficoCruzador', {type:'bar',
+    data:{labels:exibidas.map(i => quebra(rotulo(A, i), 34)), datasets},
+    options:{indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:!!usaB, position:'bottom', labels:{boxWidth:12}},
+        tooltip:{callbacks:{label:c => ` ${c.dataset.label}: ${fv(c.parsed.x)}`}}},
+      scales:{x:{stacked:empilha, beginAtZero:true, max:(modo==='pct' && (empilha || !usaB)) ? 100 : (modo==='media' ? E.max : undefined),
+                 title:{display:true, text:unidade}, ticks:{callback:v => modo==='pct' ? v+'%' : fmt(v)}},
+              y:{stacked:empilha, grid:{display:false}}}}});
+
+  /* tabela: o percentual vem sempre com a contagem ao lado, porque "100%" de 5
+     pessoas e de 50 pessoas parecem iguais sem o n */
+  const celula = (i, j) => {
+    const v = valor(i, j);
+    if (modo === 'contagem') return fmt(v);
+    if (modo === 'media') return `${fv(v)} <span class="celula-vazia">(n=${fmt(linhas[i].nm)})</span>`;
+    if (!usaB) return `${pctTxt(linhas[i].n, exibidas.reduce((t, x) => t + linhas[x].n, 0))} <span class="celula-vazia">(${fmt(linhas[i].n)})</span>`;
+    return `${fv(v)} <span class="celula-vazia">(${fmt(linhas[i].cel[j])})</span>`;
+  };
+  const cabSeries = modo === 'media' ? [`Nota média: ${esc(E.rot)}`] : usaB ? series.map(j => esc(rotulo(usaB, j))) : [modo === 'pct' ? '% das respostas' : 'Respostas'];
+  $('cabecalhoCruzador').innerHTML = `<th>${esc(A.rot)}</th>` + cabSeries.map(s => `<th>${s}</th>`).join('') + '<th>Respostas na linha</th>';
+  $('corpoCruzador').innerHTML = exibidas.map(i =>
+    `<tr><td>${esc(rotulo(A, i))}</td>${series.map(j => `<td>${celula(i, j)}</td>`).join('')}<td class="num">${fmt(linhas[i].n)}</td></tr>`).join('') +
+    ocultas.map(i => `<tr><td>${esc(rotulo(A, i))}</td><td colspan="${series.length+1}" class="celula-vazia">menos de ${K} respostas, não exibido</td></tr>`).join('');
+
+  ultimoCruzamento = {A, usaB, series, exibidas, valor, modo, linhas, E};
+  const partes = [];
+  partes.push(usaB ? `"${A.rot}" × "${usaB.rot}"` : modo === 'media' ? `Nota média de "${E.rot}" por "${A.rot}"` : `Distribuição de "${A.rot}"`);
+  partes.push(`${fmt(visiveis.length)} respostas no recorte.`);
+  if (usaB && modo === 'pct') partes.push('Cada linha soma 100% entre quem respondeu às duas perguntas' + (multiB ? ', exceto quando a pergunta cruzada é de múltipla escolha: aí cada pessoa conta em todas as opções que marcou.' : '.'));
+  if (A.tipo === 'multipla') partes.push('As linhas vêm de uma pergunta de múltipla escolha: uma pessoa aparece em todas as linhas que marcou.');
+  if (ocultas.length) partes.push(`${ocultas.length} linha(s) com menos de ${K} respostas ficaram fora, para proteger quem respondeu.`);
+  $('notaCruzador').textContent = partes.join(' ');
+}
+function quebra(s, n){             // rótulo longo do eixo em várias linhas
+  const out = []; let l = '';
+  String(s).split(' ').forEach(p => { if ((l + ' ' + p).trim().length > n && l){ out.push(l); l = p; } else l = (l + ' ' + p).trim(); });
+  if (l) out.push(l); return out;
+}
+function cruzar(k){
+  // o recorte de gênero é o centro da ENFMQ: a pergunta clicada é cruzada por gênero
+  if (k === 'genero' || !VARS.genero){ $('cruzA').value = k; $('cruzB').value = ''; }
+  else { $('cruzA').value = 'genero'; $('cruzB').value = k; }
+  $('cruzModo').value = 'pct';
+  renderCruzador();
+  $('cruzador').scrollIntoView({behavior:'smooth'});
+}
+
+/* ==================== EXPORTAÇÃO ==================== */
+function csvCelula(v){ v = v == null ? '' : String(v); return /[;"\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+function baixaArquivo(nome, conteudo){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿' + conteudo], {type:'text/csv;charset=utf-8'}));
+  a.download = nome; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+const linhasCSV = l => l.map(x => x.map(csvCelula).join(';')).join('\r\n');
+function baixaCruzamento(){
+  const c = ultimoCruzamento; if (!c) return;
+  const cab = [c.A.rot].concat(c.modo === 'media' ? ['Nota média: ' + c.E.rot] : c.usaB ? c.series.map(j => rotulo(c.usaB, j)) : ['Valor'], ['Respostas na linha']);
+  const fv = v => v == null ? '' : c.modo === 'contagem' ? v : v.toFixed(2).replace('.', ',');
+  const corpo = c.exibidas.map(i => [rotulo(c.A, i)].concat(c.series.map(j => fv(c.usaB || c.modo === 'media' ? c.valor(i, j) : c.linhas[i].n)), [c.linhas[i].n]));
+  baixaArquivo('cruzamento-diagnostico-eeq.csv', linhasCSV([cab].concat(corpo)));
+}
+function baixaBase(){
+  const cab = LINHA.map(v => v.k);
+  const corpo = DADOS.map(r => LINHA.map(v => marcadas(v, r[v.k]).map(i => v.ordem[i]).join(' | ')));
+  baixaArquivo('diagnostico-eeq-base-anonimizada.csv', linhasCSV([cab].concat(corpo)));
+}
+function baixaDicionario(){
+  const tipo = {unica:'resposta única', escala:'escala', multipla:'múltipla escolha (opções separadas por " | ")'};
+  const corpo = P.vars.map(v => [v.k, v.rot, P.perguntas[v.k] || '', tipo[v.tipo], v.agregado ? 'só total nacional (não está na base)' : 'na base anonimizada', v.ordem.join(' | ')]);
+  baixaArquivo('diagnostico-eeq-dicionario.csv', linhasCSV([['coluna','descrição','pergunta no formulário','tipo','publicação','categorias']].concat(corpo)));
+}
+
+/* ==================== ORQUESTRAÇÃO ==================== */
+function atualiza(){
+  aplicaFiltros();
+  const ativos = FILTROS.filter(k => filtros[k] !== '').map(k => `${ROT_FILTRO[k]}: ${rotulo(VARS[k], +filtros[k])}`);
+  $('faixaRecorte').textContent = `Recorte atual: ${fmt(visiveis.length)} de ${fmt(DADOS.length)} respostas` + (ativos.length ? ' · ' + ativos.join(' · ') : ' · base inteira');
+  renderIndicadores(); renderBlocos(); renderCruzador();
+}
+function ligaEventos(){
+  ['cruzA','cruzB','cruzModo','cruzEscala'].forEach(id => $(id).addEventListener('change', renderCruzador));
+  $('btnBaixarCruzamento').addEventListener('click', baixaCruzamento);
+  $('btnBaixarBase').addEventListener('click', baixaBase);
+  $('btnBaixarDicionario').addEventListener('click', baixaDicionario);
+  document.addEventListener('click', e => { const b = e.target.closest('[data-cruzar]'); if (b) cruzar(b.dataset.cruzar); });
+}
+
+Chart.defaults.font.family = "'Times New Roman',Times,'Liberation Serif',serif";
+Chart.defaults.color = '#4A4033';
+Chart.defaults.font.size = 13;
+Chart.defaults.borderColor = '#E4DAC6';
+Chart.defaults.animation.duration = 350;
+montaFiltros();
+montaBlocos();
+opcoesVars($('cruzA'), false);
+opcoesVars($('cruzB'), true);
+opcoesVars($('cruzEscala'), false, v => v.tipo === 'escala');
+// abertura do cruzador: o recorte de gênero é o centro da ENFMQ
+$('cruzA').value = VARS.genero ? 'genero' : LINHA[0].k;
+$('cruzB').value = VARS.racismoFrequencia ? 'racismoFrequencia' : '';
+ligaEventos();
+ligaDicas();
+renderDias();
+initMapa();
+atualiza();
+setTimeout(() => mapa.invalidateSize(), 400);
+</script>
+
+<!-- VLibras: tradução do conteúdo para Libras. Sem internet, o script não carrega e o resto do painel continua funcionando. -->
+<div vw class="enabled">
+  <div vw-access-button class="active"></div>
+  <div vw-plugin-wrapper><div class="vw-plugin-top-wrapper"></div></div>
+</div>
+<script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
+<script>
+  try { new window.VLibras.Widget('https://vlibras.gov.br/app'); } catch (e) {}
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+# A planilha de respostas tem nome, e-mail e data de nascimento de estudantes.
+# Nenhum CSV de respostas pode ir para o GitHub, nem por engano. A única
+# exceção é a lista pública de municípios do IBGE, que o script usa no mapa.
+*.csv
+!municipios-ibge.csv
+
+*.tmp
+__pycache__/
+.DS_Store
