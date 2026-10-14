@@ -240,7 +240,7 @@
         <div class="secao-cabecalho"><div>
             <div class="rotulo">Comece por aqui</div>
             <h2>Escolha o recorte</h2>
-            <p class="descricao">Os filtros valem para a página toda: síntese, perguntas e cruzamentos mudam juntos. Um exemplo: escolha <em>Identidade de gênero: Feminino</em> para ler o diagnóstico só pelas respostas das meninas. Para proteger quem respondeu, um recorte com menos de __MINIMO_GRUPO__ respostas não mostra resultados.</p>
+            <p class="descricao">Os filtros valem para a página toda: síntese, perguntas e cruzamentos mudam juntos. Um exemplo: escolha <em>Identidade de gênero: Feminino</em> para ler o diagnóstico só pelas respostas das meninas. A faixa verde logo abaixo mostra quantas respostas há no recorte escolhido.</p>
         </div></div>
         <div class="filtros" id="caixaFiltros"></div>
     </div>
@@ -282,7 +282,7 @@
         <div class="secao-cabecalho"><div>
             <div class="rotulo">Explore por conta própria</div>
             <h2>Monte seu próprio cruzamento</h2>
-            <p class="descricao">Escolha uma pergunta para as linhas e, se quiser, outra para cruzar. Exemplo: <em>Identidade de gênero</em> × <em>Com que frequência presencia racismo</em>, medido em “% dentro de cada linha”, mostra se meninas e meninos relatam o racismo de forma diferente. Linhas com menos de __MINIMO_GRUPO__ respostas não são exibidas.</p>
+            <p class="descricao">Escolha uma pergunta para as linhas e, se quiser, outra para cruzar. Exemplo: <em>Identidade de gênero</em> × <em>Com que frequência presencia racismo</em>, medido em “% dentro de cada linha”, mostra se meninas e meninos relatam o racismo de forma diferente. A última coluna mostra quantas respostas há em cada linha. Percentuais calculados sobre poucas respostas devem ser lidos com cautela.</p>
         </div></div>
         <div class="construtor-caixa">
             <div class="construtor-controles">
@@ -321,7 +321,7 @@
                 <p><strong>Quem está (e quem não está) aqui.</strong> O diagnóstico é uma escuta, não uma amostra estatística. Ele mostra o que disseram as pessoas que responderam, e a participação depende da mobilização em cada território. Por isso os números não devem ser lidos como “a realidade de todas as escolas quilombolas do estado”. Eles valem como a voz de quem participou.</p>
                 <p><strong>O que nunca é publicado.</strong> Nome, e-mail, data de nascimento, horário de envio, nome da escola, município de cada pessoa, tipo de deficiência, motivo de abandono escolar, monitora pedagógica e todas as respostas escritas (as dificuldades com transporte e as violações de direitos relatadas). Elas ficam na planilha, de acesso da equipe, para a leitura qualitativa.</p>
                 <p><strong>O que é publicado só como total.</strong> Faixa etária, turno, trabalho fora da escola, deficiência e abandono escolar aparecem como totais da base inteira. Eles não mudam com os filtros e não entram no cruzador. Somados a estado, gênero e série, permitiriam reconhecer uma pessoa.</p>
-                <p><strong>Grupos pequenos.</strong> Em estado, gênero, raça/cor e série, categorias com menos de __MINIMO_GRUPO__ pessoas aparecem agrupadas como “grupo pequeno”. Pelo mesmo motivo, nenhum recorte ou linha de cruzamento com menos de __MINIMO_GRUPO__ respostas é exibido. Conforme novas respostas chegam, as categorias passam do limite e voltam a aparecer sozinhas.</p>
+                <p><strong>Grupos pequenos.</strong> Em estado, gênero, raça/cor e série, categorias com menos de __MINIMO_GRUPO__ pessoas aparecem agrupadas como “grupo pequeno”. Conforme novas respostas chegam, as categorias passam do limite e voltam a aparecer sozinhas.</p>
                 <div class="caixa-aviso"><strong class="titulo">Como ler as perguntas</strong>As perguntas de escala (de 0 a 5 ou de 1 a 5) são mostradas com a nota média e a distribuição das notas. As de múltipla escolha somam mais de 100%, porque cada pessoa podia marcar várias opções. Nelas, o percentual é sobre quem respondeu à pergunta. Respostas escritas no campo “Outro” foram lidas e colocadas na categoria correspondente quando era possível (por exemplo, “38 minutos” entrou em “Menos de 1 hora”). As que não se encaixavam ficaram como “Outra resposta”.</div>
             </div>
             <div class="cartao-fonte">
@@ -474,9 +474,8 @@ function aplicaFiltros(){
   const ativos = FILTROS.filter(k => filtros[k] !== '');
   visiveis = DADOS.filter(r => ativos.every(k => r[k] === +filtros[k]));
 }
-/* Recorte pequeno demais: não mostramos nada, para que ninguém consiga, combinando
-   filtros, isolar as respostas de uma pessoa. */
-const protegido = () => visiveis.length < K;
+/* Combinação de filtros sem nenhuma resposta: em vez de gráficos vazios, um aviso. */
+const vazio = () => visiveis.length === 0;
 
 /* ==================== CONTAGENS ==================== */
 function distribuicao(v, arr){
@@ -507,7 +506,7 @@ const CARTOES = [
   {k:'escolaTerritorio', cats:['Sim'], rot:'estudam em escola localizada em território quilombola'},
 ];
 function renderIndicadores(){
-  if (protegido()){ $('indicadores').innerHTML = avisoProtecao(); return; }
+  if (vazio()){ $('indicadores').innerHTML = avisoVazio(); return; }
   const cards = [[fmt(visiveis.length), 'respostas no recorte', visiveis.length === DADOS.length ? 'base inteira' : `de ${fmt(DADOS.length)} no total`, false]];
   CARTOES.forEach(c => {
     const v = VARS[c.k]; if (!v) return;
@@ -526,9 +525,9 @@ function renderIndicadores(){
   $('indicadores').innerHTML = cards.map(c =>
     `<div class="indicador"><div class="valor${c[3]?' texto':''}">${c[0]}</div><div class="rotulo">${c[1]}</div><div class="nota">${c[2]}</div></div>`).join('');
 }
-function avisoProtecao(){
-  return `<div class="aviso-protecao" style="grid-column:1/-1"><strong>Este recorte tem ${fmt(visiveis.length)} resposta(s), menos de ${K}.</strong>
-    Para proteger quem respondeu, recortes tão pequenos não mostram resultados: com tão poucas pessoas, seria possível descobrir o que uma estudante específica respondeu. Tire um dos filtros para ampliar o recorte.</div>`;
+function avisoVazio(){
+  return `<div class="aviso-protecao" style="grid-column:1/-1"><strong>Nenhuma resposta com essa combinação de filtros.</strong>
+    Tire um dos filtros ou clique em “Limpar filtros”.</div>`;
 }
 
 /* ==================== PERGUNTAS ==================== */
@@ -604,7 +603,7 @@ function montaBlocos(){
 function renderBlocos(){
   P.blocos.forEach(([b]) => {
     const grade = $('grade-'+b);
-    if (protegido()){ grade.innerHTML = avisoProtecao(); return; }
+    if (vazio()){ grade.innerHTML = avisoVazio(); return; }
     grade.innerHTML = P.vars.filter(v => v.bloco === b).map(htmlPergunta).join('');
   });
 }
@@ -670,10 +669,9 @@ let mapa, camada;
 function initMapa(){
   mapa = L.map('mapa', {preferCanvas:true, minZoom:3}).setView([-12.5,-50],4);
   const bases = {
-    'Claro': L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap &middot; &copy; CARTO'}),
     'Ruas': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}),
     'Satélite': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Imagens &copy; Esri'})};
-  bases['Claro'].addTo(mapa);
+  bases['Ruas'].addTo(mapa);
   L.control.layers(bases, null, {position:'topright'}).addTo(mapa);
   L.control.scale({imperial:false}).addTo(mapa);
   camada = L.featureGroup().addTo(mapa);
@@ -720,7 +718,7 @@ function renderCruzador(){
     $('caixaGraficoCruz').style.height = '0px';
     $('notaCruzador').textContent = msg; ultimoCruzamento = null;
   };
-  if (protegido()) return limpa(`O recorte atual tem menos de ${K} respostas; amplie os filtros para cruzar.`);
+  if (vazio()) return limpa('Nenhuma resposta com essa combinação de filtros.');
   const usaB = modo !== 'media' && B && B.k !== A.k ? B : null;
   // contagens: linha a (categoria de A) × coluna b (categoria de B)
   const linhas = A.ordem.map(() => ({n:0, cel:B ? new Array(usaB ? usaB.ordem.length : 1).fill(0) : [0], soma:0, nm:0}));
@@ -737,8 +735,8 @@ function renderCruzador(){
     } else as.forEach(a => { linhas[a].n++; linhas[a].cel[0]++; });
   });
   const cats = A.ordem.map((_, i) => i).filter(i => linhas[i].n > 0);
-  const exibidas = cats.filter(i => linhas[i].n >= K), ocultas = cats.filter(i => linhas[i].n < K);
-  if (!exibidas.length) return limpa(`Nenhuma linha tem ${K} respostas ou mais neste recorte.`);
+  const exibidas = cats;
+  if (!exibidas.length) return limpa('Ninguém respondeu a esta pergunta no recorte atual.');
   let series = usaB ? usaB.ordem.map((_, j) => j).filter(j => exibidas.some(i => linhas[i].cel[j] > 0)) : [0];
   const multiB = usaB && usaB.tipo === 'multipla';
   const valor = (i, j) => modo === 'contagem' ? linhas[i].cel[j]
@@ -787,8 +785,7 @@ function renderCruzador(){
   const cabSeries = modo === 'media' ? [`Nota média: ${esc(E.rot)}`] : usaB ? series.map(j => esc(rotulo(usaB, j))) : [modo === 'pct' ? '% das respostas' : 'Respostas'];
   $('cabecalhoCruzador').innerHTML = `<th>${esc(A.rot)}</th>` + cabSeries.map(s => `<th>${s}</th>`).join('') + '<th>Respostas na linha</th>';
   $('corpoCruzador').innerHTML = exibidas.map(i =>
-    `<tr><td>${esc(rotulo(A, i))}</td>${series.map(j => `<td>${celula(i, j)}</td>`).join('')}<td class="num">${fmt(linhas[i].n)}</td></tr>`).join('') +
-    ocultas.map(i => `<tr><td>${esc(rotulo(A, i))}</td><td colspan="${series.length+1}" class="celula-vazia">menos de ${K} respostas, não exibido</td></tr>`).join('');
+    `<tr><td>${esc(rotulo(A, i))}</td>${series.map(j => `<td>${celula(i, j)}</td>`).join('')}<td class="num">${fmt(linhas[i].n)}</td></tr>`).join('');
 
   ultimoCruzamento = {A, usaB, series, exibidas, valor, modo, linhas, E};
   const partes = [];
@@ -796,7 +793,6 @@ function renderCruzador(){
   partes.push(`${fmt(visiveis.length)} respostas no recorte.`);
   if (usaB && modo === 'pct') partes.push('Cada linha soma 100% entre quem respondeu às duas perguntas' + (multiB ? ', exceto quando a pergunta cruzada é de múltipla escolha: aí cada pessoa conta em todas as opções que marcou.' : '.'));
   if (A.tipo === 'multipla') partes.push('As linhas vêm de uma pergunta de múltipla escolha: uma pessoa aparece em todas as linhas que marcou.');
-  if (ocultas.length) partes.push(`${ocultas.length} linha(s) com menos de ${K} respostas ficaram fora, para proteger quem respondeu.`);
   $('notaCruzador').textContent = partes.join(' ');
 }
 function quebra(s, n){             // rótulo longo do eixo em várias linhas

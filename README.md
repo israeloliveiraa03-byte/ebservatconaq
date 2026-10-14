@@ -104,8 +104,7 @@ Por isso, renumerar ou reordenar o formulário não quebra nada.
 | UF, gênero, raça/cor, série | Por resposta, com categorias de menos de 5 pessoas agrupadas |
 | Demais perguntas de escolha | Por resposta, sem nada que identifique quem respondeu |
 
-Além disso, a página se recusa a mostrar recortes ou linhas de cruzamento com
-menos de 5 respostas. Antes de salvar, o script confere se algum nome, e-mail ou
+Antes de salvar, o script confere se algum nome, e-mail ou
 data de nascimento da planilha foi parar no HTML. Se tiver ido, ele apaga o
 arquivo e para com erro.
 
