@@ -49,9 +49,10 @@ A página é pública. Então o script decide, coluna por coluna, o que sai:
   saem por pessoa  as respostas fechadas (de escolha), sem nada que identifique
                    quem respondeu, para alimentar filtros e cruzamentos.
 
-E há uma segunda proteção: nas variáveis que ajudam a reconhecer alguém (UF,
-gênero, raça/cor, faixa etária, série e turno), categorias com menos de
-MINIMO_GRUPO pessoas são agrupadas. Ver agrupa_grupos_pequenos().
+Existe ainda, desligada, uma proteção extra: agrupar como "grupo pequeno" as
+categorias com menos de MINIMO_GRUPO pessoas (UF, gênero, raça/cor, série). A
+equipe decidiu não usá-la (out/2026), porque o painel é material de uso dos
+próprios estudantes. Para religar, ponha AGRUPAR_GRUPOS_PEQUENOS = True.
 """
 
 import argparse
@@ -81,9 +82,11 @@ MUNICIPIOS_CACHE = "municipios-ibge.csv"   # fica no repositório: o GitHub não
 # menos respostas do que isto, o index.html antigo NÃO é sobrescrito.
 MINIMO_RESPOSTAS = 30
 
-# Proteção de anonimato: categorias com menos pessoas do que isto são agrupadas
-# nas variáveis que ajudam a reconhecer alguém. 5 é o piso usual em estatística
-# pública (o IBGE e o INEP usam regras parecidas para não divulgar células pequenas).
+# Agrupamento de categorias pequenas: DESLIGADO por decisão da equipe (out/2026).
+# Ligado (True), toda categoria com menos de MINIMO_GRUPO pessoas em UF, gênero,
+# raça/cor e série vira "Grupo pequeno (não divulgado)". 5 é o piso usual em
+# estatística pública (o IBGE e o INEP usam regras parecidas).
+AGRUPAR_GRUPOS_PEQUENOS = False
 MINIMO_GRUPO = 5
 
 UF_NOMES = {
@@ -997,7 +1000,8 @@ def main():
 
         meta = vars_do_painel()
         agregados = conta_agregados(registros, meta)
-        agrupa_grupos_pequenos(registros, meta)
+        if AGRUPAR_GRUPOS_PEQUENOS:
+            agrupa_grupos_pequenos(registros, meta)
         colunas = monta_pacote(registros, meta)
 
         pacote = {

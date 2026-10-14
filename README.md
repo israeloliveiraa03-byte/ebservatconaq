@@ -101,7 +101,7 @@ Por isso, renumerar ou reordenar o formulário não quebra nada.
 | Município (da comunidade e da escola) | Por resposta, para o mapa acompanhar os filtros (posição = centro do município) |
 | Deficiência e abandono escolar | Só o total da base, sem o tipo nem o motivo |
 | Faixa etária, turno, trabalho | Só o total da base (não filtram nem cruzam) |
-| UF, gênero, raça/cor, série | Por resposta, com categorias de menos de 5 pessoas agrupadas |
+| UF, gênero, raça/cor, série | Por resposta, cada categoria com o próprio nome |
 | Demais perguntas de escolha | Por resposta, sem nada que identifique quem respondeu |
 
 Antes de salvar, o script confere se algum nome, e-mail ou
@@ -112,9 +112,10 @@ arquivo e para com erro.
 (sem identificação), porque é isso que permite filtrar e cruzar. Uma pessoa com
 conhecimento técnico, que soubesse a UF, o gênero e a série de uma estudante
 específica, poderia tentar achá-la nesses dados. Foi por isso que idade, turno e
-trabalho saíram dos dados por pessoa. Para apertar mais, mude o limite
-`MINIMO_GRUPO` (ex.: de 5 para 10) ou acrescente `agregado=True` a outras
-perguntas em `PERGUNTAS`.
+trabalho saíram dos dados por pessoa. Para apertar mais, há uma proteção pronta
+e desligada no script: com `AGRUPAR_GRUPOS_PEQUENOS = True`, categorias com menos
+de `MINIMO_GRUPO` pessoas viram "grupo pequeno". Outra opção é acrescentar
+`agregado=True` a outras perguntas em `PERGUNTAS`.
 
 **Recomendação para a planilha.** Hoje o link publicado entrega a planilha
 inteira, com nomes e e-mails, a quem o tiver. Uma alternativa mais segura é criar
