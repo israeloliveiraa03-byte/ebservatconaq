@@ -14,7 +14,10 @@ name: Atualizar painel
 
 on:
   schedule:
-    # cron usa o horário de Greenwich (UTC). 9h UTC = 6h em Brasília.
+    # Três vezes por dia, para garantir: se o GitHub pular um horário (acontece
+    # em momentos de muito uso), o seguinte cobre.
+    # cron usa o horário de Greenwich (UTC), 3 horas à frente de Brasília:
+    #   9h UTC = 6h07 · 15h UTC = 12h07 · 2h UTC = 23h07 (horário de Brasília)
     # campos: minuto hora dia-do-mês mês dia-da-semana
     - cron: "7 2,9,15 * * *"
   workflow_dispatch:
