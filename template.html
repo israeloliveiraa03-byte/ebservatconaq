@@ -315,6 +315,7 @@
                 <div class="campo" id="linhaCruzEscala" style="display:none"><label for="cruzEscala">… escala</label><select id="cruzEscala"></select></div>
             </div>
             <div class="construtor-resultado">
+                <div class="caixa-aviso" id="explicaMedia" style="display:none;margin:0 0 18px"></div>
                 <div class="construtor-grafico" id="caixaGraficoCruz"><canvas id="graficoCruzador" role="img" aria-label="Gráfico do cruzamento escolhido"></canvas></div>
                 <div class="tabela-scroll">
                     <table class="tabela-ranking" id="tabelaCruzador"><thead><tr id="cabecalhoCruzador"></tr></thead><tbody id="corpoCruzador"></tbody></table>
@@ -760,6 +761,7 @@ function renderCruzador(){
   let modo = $('cruzModo').value;
   const E = VARS[$('cruzEscala').value];
   $('linhaCruzEscala').style.display = modo === 'media' ? '' : 'none';
+  explicaMedia(modo === 'media' ? E : null);
   $('cruzB').disabled = modo === 'media';
   const limpa = msg => {
     $('cabecalhoCruzador').innerHTML = ''; $('corpoCruzador').innerHTML = '';
@@ -808,6 +810,8 @@ function renderCruzador(){
   $('caixaGraficoCruz').style.height = altura + 'px';
   const unidade = modo === 'contagem' ? 'respostas' : modo === 'pct' ? (usaB ? '% dentro de cada linha' : '% das respostas') : `nota média (${E.min} a ${E.max})`;
   const fv = v => v == null ? '—' : modo === 'contagem' ? fmt(v) : v.toFixed(1).replace('.', ',') + (modo === 'pct' ? '%' : '');
+  // na nota média, o número vem acompanhado do significado da nota mais próxima: "2,8 ≈ Às vezes"
+  const fvMedia = v => v == null ? '—' : `${fv(v)} ≈ ${significado(E, v)}`;
   // sem B, "% dentro de cada linha" seria sempre 100%: vira a distribuição de A
   if (!usaB && modo === 'pct'){
     const tot = exibidas.reduce((t, i) => t + linhas[i].n, 0);
@@ -817,7 +821,7 @@ function renderCruzador(){
     data:{labels:exibidas.map(i => quebra(rotulo(A, i), 34)), datasets},
     options:{indexAxis:'y', responsive:true, maintainAspectRatio:false,
       plugins:{legend:{display:!!usaB, position:'bottom', labels:{boxWidth:12}},
-        tooltip:{callbacks:{label:c => ` ${c.dataset.label}: ${fv(c.parsed.x)}`}}},
+        tooltip:{callbacks:{label:c => ` ${c.dataset.label}: ${modo === 'media' ? fvMedia(c.parsed.x) : fv(c.parsed.x)}`}}},
       scales:{x:{stacked:empilha, beginAtZero:true, max:(modo==='pct' && (empilha || !usaB)) ? 100 : (modo==='media' ? E.max : undefined),
                  title:{display:true, text:unidade}, ticks:{callback:v => modo==='pct' ? v+'%' : fmt(v)}},
               y:{stacked:empilha, grid:{display:false}}}}});
@@ -827,7 +831,7 @@ function renderCruzador(){
   const celula = (i, j) => {
     const v = valor(i, j);
     if (modo === 'contagem') return fmt(v);
-    if (modo === 'media') return `${fv(v)} <span class="celula-vazia">(n=${fmt(linhas[i].nm)})</span>`;
+    if (modo === 'media') return `${esc(fvMedia(v))} <span class="celula-vazia">(n=${fmt(linhas[i].nm)})</span>`;
     if (!usaB) return `${pctTxt(linhas[i].n, exibidas.reduce((t, x) => t + linhas[x].n, 0))} <span class="celula-vazia">(${fmt(linhas[i].n)})</span>`;
     return `${fv(v)} <span class="celula-vazia">(${fmt(linhas[i].cel[j])})</span>`;
   };
@@ -843,6 +847,26 @@ function renderCruzador(){
   if (usaB && modo === 'pct') partes.push('Cada linha soma 100% entre quem respondeu às duas perguntas' + (multiB ? ', exceto quando a pergunta cruzada é de múltipla escolha: aí cada pessoa conta em todas as opções que marcou.' : '.'));
   if (A.tipo === 'multipla') partes.push('As linhas vêm de uma pergunta de múltipla escolha: uma pessoa aparece em todas as linhas que marcou.');
   $('notaCruzador').textContent = partes.join(' ');
+}
+/* O que quer dizer cada nota da escala ("3 – Às vezes" → "Às vezes"). */
+function significado(E, v){
+  const i = Math.min(E.ordem.length - 1, Math.max(0, Math.round(v) - E.min));
+  const c = (E.curtos && E.curtos[i]) || E.ordem[i];
+  return c.includes(' – ') ? c.split(' – ').slice(1).join(' – ') : c;
+}
+/* Caixa que explica a "nota média" quando essa medida é escolhida no cruzador. */
+function explicaMedia(E){
+  const caixa = $('explicaMedia');
+  if (!E){ caixa.style.display = 'none'; return; }
+  const ex = E.min + (E.max - E.min) / 2 + 0.3;          // um exemplo no meio da escala
+  const legenda = E.ordem.map((n, i) => `<strong>${esc(n)}</strong> = ${esc(significado(E, +n))}`).join(' · ');
+  const sentido = E.extremos ? ` Quanto mais perto de ${E.max}, ${esc(E.extremos[1])}; quanto mais perto de ${E.min}, ${esc(E.extremos[0])}.` : '';
+  caixa.innerHTML = `<strong class="titulo">Como ler a nota média</strong>` +
+    `Na pergunta “${esc(E.rot)}”, cada estudante marcou uma nota de ${E.min} a ${E.max}. ` +
+    `A nota média é a soma das notas dividida pelo número de pessoas que responderam, calculada separadamente para cada linha.${sentido}` +
+    `<br><span style="display:inline-block;margin-top:6px">${legenda}</span>` +
+    `<br><span style="display:inline-block;margin-top:6px">Ao lado de cada média aparece o significado da nota mais próxima: “${ex.toFixed(1).replace('.', ',')} ≈ ${esc(significado(E, ex))}” quer dizer que, em média, as respostas daquela linha ficaram perto de “${esc(significado(E, ex))}”.</span>`;
+  caixa.style.display = '';
 }
 function quebra(s, n){             // rótulo longo do eixo em várias linhas
   const out = []; let l = '';
