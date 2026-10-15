@@ -139,6 +139,7 @@
     .lg-ponto{display:inline-block;width:10px;height:10px;border-radius:50%;border:1.5px solid #FBF6EA;box-shadow:0 0 0 1px #8A7C68}
     .lg-comunidade{background:#3B5D42}
     .lg-escola{background:#B9812F}
+    .lg-seta{display:inline-block;width:0;height:0;border-top:6px solid transparent;border-bottom:6px solid transparent;border-left:10px solid #B9812F;margin-left:-2px}
     .ponto-tooltip{background:var(--verde-escuro);color:#fff;border:none;font-family:var(--fonte);font-size:12px;padding:3px 8px;box-shadow:none}
     .ponto-tooltip::before{border-top-color:var(--verde-escuro)!important}
 
@@ -291,12 +292,12 @@
                         <select id="mapaBase"><option value="comunidade">da comunidade de quem respondeu</option><option value="escola">da escola onde estuda</option></select></div>
                     <label class="opcao-linhas"><input type="checkbox" id="mapaLinhas" checked> Mostrar o deslocamento de quem mora num município e estuda em outro</label>
                 </div>
-                <div class="legenda-mapa" id="legendaLinhas"><span class="lg-linha"></span> sai da comunidade <span class="lg-ponto lg-comunidade"></span> e chega à escola <span class="lg-ponto lg-escola"></span> · espessura = nº de estudantes</div>
+                <div class="legenda-mapa" id="legendaLinhas"><span class="lg-ponto lg-comunidade"></span> comunidade <span class="lg-linha"></span><span class="lg-seta"></span> escola · a seta aponta para onde a pessoa estuda · espessura = nº de estudantes</div>
                 <div class="mapa-wrapper"><div id="mapa"></div></div>
                 <p class="nota-metodo" id="notaMapa"></p>
             </div>
         </div>
-        <div class="caixa-aviso"><strong class="titulo">Como ler o mapa</strong>O município foi escrito à mão no formulário e reconhecido automaticamente. Quando o texto não permitiu reconhecer o município, a resposta fica fora do mapa, mas continua nos gráficos. A posição de cada círculo é o centro (centróide) do município, nunca o endereço da comunidade ou da escola. As <strong>linhas douradas</strong> ligam o município onde a pessoa mora ao município onde ela estuda, quando são diferentes. Elas mostram a ligação entre os dois centros, não o caminho percorrido. Clique numa linha para ver quantas pessoas fazem aquele trajeto. Clique num círculo para ver as escolas citadas: os nomes também foram escritos à mão, e as grafias diferentes da mesma escola foram juntadas automaticamente.</div>
+        <div class="caixa-aviso"><strong class="titulo">Como ler o mapa</strong>O município foi escrito à mão no formulário e reconhecido automaticamente. Quando o texto não permitiu reconhecer o município, a resposta fica fora do mapa, mas continua nos gráficos. A posição de cada círculo é o centro (centróide) do município, nunca o endereço da comunidade ou da escola. As <strong>setas douradas</strong> saem do município onde a pessoa mora (ponto verde) e apontam para o município onde ela estuda, quando são diferentes. Elas mostram a ligação entre os dois centros, não o caminho percorrido. Clique numa seta para ver quantas pessoas fazem aquele trajeto. Clique num círculo para ver as escolas citadas: os nomes também foram escritos à mão, e as grafias diferentes da mesma escola foram juntadas automaticamente.</div>
     </div>
 </section>
 
@@ -704,6 +705,8 @@ function initMapa(){
   L.control.layers(bases, null, {position:'topright'}).addTo(mapa);
   L.control.scale({imperial:false}).addTo(mapa);
   camada = L.featureGroup().addTo(mapa);
+  camadaSetas = L.featureGroup().addTo(mapa);
+  mapa.on('zoomend', desenhaSetas);      // a ponta da seta tem tamanho em pixels: refaz a cada zoom
   renderMapa();
   $('mapaBase').addEventListener('change', renderMapa);
   $('mapaLinhas').addEventListener('change', renderMapa);
@@ -725,7 +728,35 @@ function arco(a, b){
    comunidade e o da escola foram reconhecidos e são diferentes, soma um trajeto
    comunidade → escola. Trajetos iguais viram uma linha só, mais grossa. */
 let rendLinhas = null;
+/* Ponta de seta no fim de cada linha, apontando para a escola. O Leaflet não
+   tem setas prontas, então desenhamos um triângulo: pegamos a direção do último
+   trecho da curva em pixels de tela, recuamos o comprimento da ponta e abrimos
+   para os dois lados. Como o tamanho é em pixels, a ponta é refeita a cada
+   zoom, para não ficar gigante de perto nem sumir de longe. */
+let camadaSetas = null, setas = [];
+function desenhaSetas(){
+  if (!camadaSetas) return;
+  camadaSetas.clearLayers();
+  setas.forEach(sx => {
+    const fim = mapa.latLngToLayerPoint(sx.pts[sx.pts.length - 1]);
+    const antes = mapa.latLngToLayerPoint(sx.pts[sx.pts.length - 4]);
+    const dx = fim.x - antes.x, dy = fim.y - antes.y, d = Math.hypot(dx, dy) || 1;
+    const ux = dx / d, uy = dy / d;                 // direção da seta
+    // a ponta nunca passa de 40% do comprimento da linha na tela: de longe, quando
+    // os municípios quase se encostam, a seta encolhe junto em vez de cobrir tudo
+    const ini = mapa.latLngToLayerPoint(sx.pts[0]);
+    const tamLinha = Math.hypot(fim.x - ini.x, fim.y - ini.y);
+    const comp = Math.max(5, Math.min(9 + sx.peso * 1.6, tamLinha * 0.4)), larg = comp * 0.6;
+    const base = L.point(fim.x - ux * comp, fim.y - uy * comp);
+    const tri = [fim, L.point(base.x - uy * larg, base.y + ux * larg), L.point(base.x + uy * larg, base.y - ux * larg)]
+      .map(p => mapa.layerPointToLatLng(p));
+    const ponta = L.polygon(tri, {color:'#FBF6EA', weight:1, fillColor:'#B9812F', fillOpacity:1, renderer: rendLinhas});
+    ponta.bindTooltip(sx.txt, {className:'ponto-tooltip', sticky:true});
+    camadaSetas.addLayer(ponta);
+  });
+}
 function desenhaLinhas(muns){
+  setas = [];
   const com = P.mapa.comunidade || [], esc_ = P.mapa.escola || [];
   const pares = new Map(); let ambos = 0, fora = 0;
   visiveis.forEach(r => {
@@ -742,16 +773,17 @@ function desenhaLinhas(muns){
     const pontosC = new Set(), pontosE = new Set();
     pares.forEach((n, k) => {
       const [a, b] = k.split('>').map(Number), A = muns[a], B = muns[b];
-      const linha = L.polyline(arco([A.lat, A.lon], [B.lat, B.lon]),
-        {color:'#B9812F', weight: 2 + 4*Math.sqrt(n/maior), opacity:.85, renderer: rendLinhas, lineCap:'round'});
+      const pts = arco([A.lat, A.lon], [B.lat, B.lon]), peso = 2 + 4*Math.sqrt(n/maior);
+      const linha = L.polyline(pts, {color:'#B9812F', weight: peso, opacity:.9, renderer: rendLinhas, lineCap:'butt'});
       const txt = `Mora em ${esc(A.nome)} (${A.uf}) → estuda em ${esc(B.nome)} (${B.uf}) · ${fmt(n)} estudante(s)`;
+      setas.push({pts, peso, txt});
       linha.bindTooltip(txt, {className:'ponto-tooltip', sticky:true});
       linha.bindPopup(`<strong>Deslocamento até a escola</strong><br>${txt}<div style="color:#6E624F;font-size:12.5px;margin-top:4px">Linha entre os centros dos municípios: mostra a ligação, não o caminho percorrido.</div>`);
       camada.addLayer(linha);
       pontosC.add(a); pontosE.add(b);
     });
+    // ponto de partida (a comunidade); a chegada é marcada pela ponta da seta
     pontosC.forEach(a => camada.addLayer(L.circleMarker([muns[a].lat, muns[a].lon], {radius:4, weight:1.5, color:'#FBF6EA', fillColor:'#3B5D42', fillOpacity:1, interactive:false})));
-    pontosE.forEach(b => camada.addLayer(L.circleMarker([muns[b].lat, muns[b].lon], {radius:4, weight:1.5, color:'#FBF6EA', fillColor:'#B9812F', fillOpacity:1, interactive:false})));
   }
   $('legendaLinhas').style.display = $('mapaLinhas').checked && pares.size ? '' : 'none';
   return {ambos, fora, trajetos: pares.size};
@@ -779,6 +811,7 @@ function renderMapa(){
   // trajetos curtos entre municípios vizinhos não fiquem escondidos
   const desl = desenhaLinhas(muns);
   try { const b = camada.getBounds(); if (b.isValid()) mapa.fitBounds(b, {padding:[24,24], maxZoom:7}); } catch(e){}
+  desenhaSetas();                          // depois do zoom final, para a ponta sair do tamanho certo
   const total = lista.reduce((t, m) => t + m.n, 0);
   $('notaMapa').textContent = !visiveis.length ? 'Nenhuma resposta no recorte atual.' :
     `${fmt(lista.length)} municípios, ${fmt(total)} respostas do recorte atual no mapa.` +
