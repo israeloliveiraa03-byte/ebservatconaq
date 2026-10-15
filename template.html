@@ -132,6 +132,13 @@
     .popup-escolas{margin-top:8px;font-size:13.5px}
     .popup-escolas ul{margin:4px 0 6px 18px;max-height:180px;overflow-y:auto;padding-right:4px}
     .popup-escolas li{margin-bottom:3px;line-height:1.35}
+    .opcao-linhas{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--grafite);cursor:pointer;padding-bottom:10px}
+    .opcao-linhas input{width:17px;height:17px;accent-color:var(--verde)}
+    .legenda-mapa{display:flex;align-items:center;flex-wrap:wrap;gap:6px;font-size:13px;color:var(--medio);margin:-4px 0 10px}
+    .lg-linha{display:inline-block;width:26px;height:3px;background:#B9812F;border-radius:2px}
+    .lg-ponto{display:inline-block;width:10px;height:10px;border-radius:50%;border:1.5px solid #FBF6EA;box-shadow:0 0 0 1px #8A7C68}
+    .lg-comunidade{background:#3B5D42}
+    .lg-escola{background:#B9812F}
     .ponto-tooltip{background:var(--verde-escuro);color:#fff;border:none;font-family:var(--fonte);font-size:12px;padding:3px 8px;box-shadow:none}
     .ponto-tooltip::before{border-top-color:var(--verde-escuro)!important}
 
@@ -282,12 +289,14 @@
                 <div class="camadas-painel">
                     <div class="campo"><label for="mapaBase">O mapa mostra o município</label>
                         <select id="mapaBase"><option value="comunidade">da comunidade de quem respondeu</option><option value="escola">da escola onde estuda</option></select></div>
+                    <label class="opcao-linhas"><input type="checkbox" id="mapaLinhas" checked> Mostrar o deslocamento de quem mora num município e estuda em outro</label>
                 </div>
+                <div class="legenda-mapa" id="legendaLinhas"><span class="lg-linha"></span> sai da comunidade <span class="lg-ponto lg-comunidade"></span> e chega à escola <span class="lg-ponto lg-escola"></span> · espessura = nº de estudantes</div>
                 <div class="mapa-wrapper"><div id="mapa"></div></div>
                 <p class="nota-metodo" id="notaMapa"></p>
             </div>
         </div>
-        <div class="caixa-aviso"><strong class="titulo">Como ler o mapa</strong>O município foi escrito à mão no formulário e reconhecido automaticamente. Quando o texto não permitiu reconhecer o município, a resposta fica fora do mapa, mas continua nos gráficos. A posição de cada círculo é o centro (centróide) do município, nunca o endereço da comunidade ou da escola. Clique num círculo para ver as escolas citadas: os nomes também foram escritos à mão, e as grafias diferentes da mesma escola foram juntadas automaticamente.</div>
+        <div class="caixa-aviso"><strong class="titulo">Como ler o mapa</strong>O município foi escrito à mão no formulário e reconhecido automaticamente. Quando o texto não permitiu reconhecer o município, a resposta fica fora do mapa, mas continua nos gráficos. A posição de cada círculo é o centro (centróide) do município, nunca o endereço da comunidade ou da escola. As <strong>linhas douradas</strong> ligam o município onde a pessoa mora ao município onde ela estuda, quando são diferentes. Elas mostram a ligação entre os dois centros, não o caminho percorrido. Clique numa linha para ver quantas pessoas fazem aquele trajeto. Clique num círculo para ver as escolas citadas: os nomes também foram escritos à mão, e as grafias diferentes da mesma escola foram juntadas automaticamente.</div>
     </div>
 </section>
 
@@ -697,6 +706,55 @@ function initMapa(){
   camada = L.featureGroup().addTo(mapa);
   renderMapa();
   $('mapaBase').addEventListener('change', renderMapa);
+  $('mapaLinhas').addEventListener('change', renderMapa);
+}
+/* Arco entre dois pontos: uma curva suave (Bézier quadrática) em vez de linha
+   reta, para que trajetos que saem do mesmo lugar não se sobreponham e para o
+   desenho ler como "deslocamento", não como fronteira. */
+function arco(a, b){
+  const [y1, x1] = a, [y2, x2] = b, dx = x2 - x1, dy = y2 - y1;
+  const cx = (x1 + x2) / 2 - dy * 0.25, cy = (y1 + y2) / 2 + dx * 0.25;
+  const pts = [];
+  for (let t = 0; t <= 1.0001; t += 1/24){
+    const u = 1 - t;
+    pts.push([u*u*y1 + 2*u*t*cy + t*t*y2, u*u*x1 + 2*u*t*cx + t*t*x2]);
+  }
+  return pts;
+}
+/* Linhas de deslocamento: para cada resposta do recorte em que o município da
+   comunidade e o da escola foram reconhecidos e são diferentes, soma um trajeto
+   comunidade → escola. Trajetos iguais viram uma linha só, mais grossa. */
+let rendLinhas = null;
+function desenhaLinhas(muns){
+  const com = P.mapa.comunidade || [], esc_ = P.mapa.escola || [];
+  const pares = new Map(); let ambos = 0, fora = 0;
+  visiveis.forEach(r => {
+    const a = com[r._i], b = esc_[r._i];
+    if (a == null || b == null || a < 0 || b < 0) return;
+    ambos++;
+    if (a === b) return;
+    fora++;
+    const k = a + '>' + b; pares.set(k, (pares.get(k) || 0) + 1);
+  });
+  if ($('mapaLinhas').checked && pares.size){
+    rendLinhas = rendLinhas || L.canvas({tolerance: 8});   // área de clique maior que a linha fina
+    const maior = Math.max(...pares.values());
+    const pontosC = new Set(), pontosE = new Set();
+    pares.forEach((n, k) => {
+      const [a, b] = k.split('>').map(Number), A = muns[a], B = muns[b];
+      const linha = L.polyline(arco([A.lat, A.lon], [B.lat, B.lon]),
+        {color:'#B9812F', weight: 2 + 4*Math.sqrt(n/maior), opacity:.85, renderer: rendLinhas, lineCap:'round'});
+      const txt = `Mora em ${esc(A.nome)} (${A.uf}) → estuda em ${esc(B.nome)} (${B.uf}) · ${fmt(n)} estudante(s)`;
+      linha.bindTooltip(txt, {className:'ponto-tooltip', sticky:true});
+      linha.bindPopup(`<strong>Deslocamento até a escola</strong><br>${txt}<div style="color:#6E624F;font-size:12.5px;margin-top:4px">Linha entre os centros dos municípios: mostra a ligação, não o caminho percorrido.</div>`);
+      camada.addLayer(linha);
+      pontosC.add(a); pontosE.add(b);
+    });
+    pontosC.forEach(a => camada.addLayer(L.circleMarker([muns[a].lat, muns[a].lon], {radius:4, weight:1.5, color:'#FBF6EA', fillColor:'#3B5D42', fillOpacity:1, interactive:false})));
+    pontosE.forEach(b => camada.addLayer(L.circleMarker([muns[b].lat, muns[b].lon], {radius:4, weight:1.5, color:'#FBF6EA', fillColor:'#B9812F', fillOpacity:1, interactive:false})));
+  }
+  $('legendaLinhas').style.display = $('mapaLinhas').checked && pares.size ? '' : 'none';
+  return {ambos, fora, trajetos: pares.size};
 }
 /* O pacote traz, para cada resposta, o índice do município (da comunidade e da
    escola) numa lista única. Aqui contamos só as respostas do recorte atual: é
@@ -717,10 +775,15 @@ function renderMapa(){
     c.bindPopup(() => popupMunicipio(m, qual), {maxWidth:340});
     camada.addLayer(c);
   });
+  // linhas por último: por cima dos círculos, que são semitransparentes, para que
+  // trajetos curtos entre municípios vizinhos não fiquem escondidos
+  const desl = desenhaLinhas(muns);
   try { const b = camada.getBounds(); if (b.isValid()) mapa.fitBounds(b, {padding:[24,24], maxZoom:7}); } catch(e){}
   const total = lista.reduce((t, m) => t + m.n, 0);
   $('notaMapa').textContent = !visiveis.length ? 'Nenhuma resposta no recorte atual.' :
     `${fmt(lista.length)} municípios, ${fmt(total)} respostas do recorte atual no mapa.` +
+    (desl.ambos ? ` ${fmt(desl.fora)} de ${fmt(desl.ambos)} estudantes (${pctTxt(desl.fora, desl.ambos)}) estudam em um município diferente daquele onde moram` +
+      (desl.fora ? `, em ${fmt(desl.trajetos)} trajeto(s) diferente(s).` : '.') : '') +
     (sem ? ` ${fmt(sem)} resposta(s) não entram no mapa porque o município escrito no formulário não foi reconhecido.` : '');
 }
 
