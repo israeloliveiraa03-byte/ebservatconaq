@@ -140,6 +140,19 @@
     .lg-comunidade{background:#3B5D42}
     .lg-escola{background:#B9812F}
     .lg-seta{display:inline-block;width:0;height:0;border-top:6px solid transparent;border-bottom:6px solid transparent;border-left:10px solid #B9812F;margin-left:-2px}
+    #fichaFlutuante{position:fixed;z-index:3000;pointer-events:none;background:var(--creme);color:var(--texto);border:1px solid var(--borda);border-radius:3px;box-shadow:0 4px 16px rgba(36,56,42,.28);padding:10px 12px;font-size:13px;line-height:1.4;width:290px;opacity:0;transition:opacity .12s}
+    #fichaFlutuante.visivel{opacity:1}
+    .ficha-titulo{display:block;color:var(--verde-escuro);font-size:15px;margin-bottom:2px}
+    .ficha-linha{color:var(--grafite)}
+    .ficha-ind{list-style:none;margin:6px 0 4px;padding:6px 0 0;border-top:1px solid var(--claro)}
+    .ficha-ind li{margin-bottom:2px}
+    .ficha-ind b{color:var(--verde)}
+    .ficha-sub{font-weight:700;margin-top:6px;color:var(--grafite)}
+    .ficha-esc{margin:2px 0 0 16px}
+    .ficha-esc li{margin-bottom:2px}
+    .ficha-esc.rolagem{max-height:170px;overflow-y:auto;padding-right:4px}
+    .ficha-n{color:var(--medio);font-size:12px}
+    .ficha-desloc{color:#8A5A12;margin-top:2px}
     .ponto-tooltip{background:var(--verde-escuro);color:#fff;border:none;font-family:var(--fonte);font-size:12px;padding:3px 8px;box-shadow:none}
     .ponto-tooltip::before{border-top-color:var(--verde-escuro)!important}
 
@@ -279,7 +292,7 @@
         <div class="secao-cabecalho"><div>
             <div class="rotulo">De onde vêm as vozes</div>
             <h2>Andamento da pesquisa e territórios</h2>
-            <p class="descricao">À esquerda, quantas respostas chegaram a cada dia, sempre para a base inteira. À direita, os municípios das comunidades (ou das escolas) de quem respondeu. O mapa acompanha os filtros: escolha, por exemplo, <em>Identidade de gênero: Feminino</em> para ver de onde vêm as respostas das meninas. Os círculos são maiores quanto mais respostas o município reúne. Clique num círculo para ver os nomes das escolas.</p>
+            <p class="descricao">À esquerda, quantas respostas chegaram a cada dia, sempre para a base inteira. À direita, os municípios das comunidades (ou das escolas) de quem respondeu. O mapa acompanha os filtros: escolha, por exemplo, <em>Identidade de gênero: Feminino</em> para ver de onde vêm as respostas das meninas. Os círculos são maiores quanto mais respostas o município reúne. Passe o mouse sobre um círculo para ver a ficha do município; clique (ou toque, no celular) para ver a ficha completa.</p>
         </div></div>
         <div class="coleta-grid">
             <div>
@@ -297,7 +310,7 @@
                 <p class="nota-metodo" id="notaMapa"></p>
             </div>
         </div>
-        <div class="caixa-aviso"><strong class="titulo">Como ler o mapa</strong>O município foi escrito à mão no formulário e reconhecido automaticamente. Quando o texto não permitiu reconhecer o município, a resposta fica fora do mapa, mas continua nos gráficos. A posição de cada círculo é o centro (centróide) do município, nunca o endereço da comunidade ou da escola. As <strong>setas douradas</strong> saem do município onde a pessoa mora (ponto verde) e apontam para o município onde ela estuda, quando são diferentes. Elas mostram a ligação entre os dois centros, não o caminho percorrido. Clique numa seta para ver quantas pessoas fazem aquele trajeto. Clique num círculo para ver as escolas citadas: os nomes também foram escritos à mão, e as grafias diferentes da mesma escola foram juntadas automaticamente.</div>
+        <div class="caixa-aviso"><strong class="titulo">Como ler o mapa</strong>O município foi escrito à mão no formulário e reconhecido automaticamente. Quando o texto não permitiu reconhecer o município, a resposta fica fora do mapa, mas continua nos gráficos. A posição de cada círculo é o centro (centróide) do município, nunca o endereço da comunidade ou da escola. As <strong>setas douradas</strong> saem do município onde a pessoa mora (ponto verde) e apontam para o município onde ela estuda, quando são diferentes. Elas mostram a ligação entre os dois centros, não o caminho percorrido. Os trajetos de cada município aparecem na ficha dele, ao passar o mouse sobre o círculo. Passe o mouse sobre um círculo para ver a ficha do município (respostas, gênero, alguns indicadores e as principais escolas); clique para ver a lista completa de escolas citadas: os nomes também foram escritos à mão, e as grafias diferentes da mesma escola foram juntadas automaticamente.</div>
     </div>
 </section>
 
@@ -376,6 +389,7 @@
 </footer>
 
 <div id="dica" role="tooltip"></div>
+<div id="fichaFlutuante" role="tooltip"></div>
 
 <script>
 /* ==================== DADOS ====================
@@ -670,6 +684,7 @@ function ligaDicas(){
   });
   document.addEventListener('focusout', () => dica.classList.remove('visivel'));
   document.addEventListener('scroll', () => dica.classList.remove('visivel'), {passive:true});
+  document.addEventListener('scroll', () => escondeFicha(), {passive:true});
 }
 
 /* ==================== COLETA: RESPOSTAS POR DIA ==================== */
@@ -697,7 +712,11 @@ function renderDias(){
 /* ==================== MAPA ==================== */
 let mapa, camada;
 function initMapa(){
-  mapa = L.map('mapa', {preferCanvas:true, minZoom:3}).setView([-12.5,-50],4);
+  // Uma única "tela" de desenho (canvas) para círculos, setas e pontos. Com duas
+  // telas empilhadas, a de cima captura o mouse e a de baixo deixa de responder.
+  // tolerance: a área sensível ao mouse vai 6 px além do desenho, para facilitar
+  // acertar as linhas finas.
+  mapa = L.map('mapa', {preferCanvas:true, renderer: L.canvas({tolerance: 6}), minZoom:3}).setView([-12.5,-50],4);
   const bases = {
     'Ruas': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}),
     'Satélite': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Imagens &copy; Esri'})};
@@ -727,7 +746,6 @@ function arco(a, b){
 /* Linhas de deslocamento: para cada resposta do recorte em que o município da
    comunidade e o da escola foram reconhecidos e são diferentes, soma um trajeto
    comunidade → escola. Trajetos iguais viram uma linha só, mais grossa. */
-let rendLinhas = null;
 /* Ponta de seta no fim de cada linha, apontando para a escola. O Leaflet não
    tem setas prontas, então desenhamos um triângulo: pegamos a direção do último
    trecho da curva em pixels de tela, recuamos o comprimento da ponta e abrimos
@@ -750,8 +768,7 @@ function desenhaSetas(){
     const base = L.point(fim.x - ux * comp, fim.y - uy * comp);
     const tri = [fim, L.point(base.x - uy * larg, base.y + ux * larg), L.point(base.x + uy * larg, base.y - ux * larg)]
       .map(p => mapa.layerPointToLatLng(p));
-    const ponta = L.polygon(tri, {color:'#FBF6EA', weight:1, fillColor:'#B9812F', fillOpacity:1, renderer: rendLinhas});
-    ponta.bindTooltip(sx.txt, {className:'ponto-tooltip', sticky:true});
+    const ponta = L.polygon(tri, {color:'#FBF6EA', weight:1, fillColor:'#B9812F', fillOpacity:1, interactive:false});
     camadaSetas.addLayer(ponta);
   });
 }
@@ -768,17 +785,17 @@ function desenhaLinhas(muns){
     const k = a + '>' + b; pares.set(k, (pares.get(k) || 0) + 1);
   });
   if ($('mapaLinhas').checked && pares.size){
-    rendLinhas = rendLinhas || L.canvas({tolerance: 8});   // área de clique maior que a linha fina
     const maior = Math.max(...pares.values());
     const pontosC = new Set(), pontosE = new Set();
     pares.forEach((n, k) => {
       const [a, b] = k.split('>').map(Number), A = muns[a], B = muns[b];
       const pts = arco([A.lat, A.lon], [B.lat, B.lon]), peso = 2 + 4*Math.sqrt(n/maior);
-      const linha = L.polyline(pts, {color:'#B9812F', weight: peso, opacity:.9, renderer: rendLinhas, lineCap:'butt'});
+      // a linha e a seta são só desenho (interactive:false): se respondessem ao
+      // mouse, com o mapa afastado cobririam os círculos vizinhos e "roubariam" a
+      // ficha deles. O trajeto aparece na ficha do município, ao passar o mouse.
+      const linha = L.polyline(pts, {color:'#B9812F', weight: peso, opacity:.9, lineCap:'butt', interactive:false});
       const txt = `Mora em ${esc(A.nome)} (${A.uf}) → estuda em ${esc(B.nome)} (${B.uf}) · ${fmt(n)} estudante(s)`;
       setas.push({pts, peso, txt});
-      linha.bindTooltip(txt, {className:'ponto-tooltip', sticky:true});
-      linha.bindPopup(`<strong>Deslocamento até a escola</strong><br>${txt}<div style="color:#6E624F;font-size:12.5px;margin-top:4px">Linha entre os centros dos municípios: mostra a ligação, não o caminho percorrido.</div>`);
       camada.addLayer(linha);
       pontosC.add(a); pontosE.add(b);
     });
@@ -803,8 +820,13 @@ function renderMapa(){
   const maior = Math.max(1, ...lista.map(m => m.n));
   lista.forEach(m => {
     const c = L.circleMarker([m.lat, m.lon], {radius:5 + 14*Math.sqrt(m.n/maior), weight:2, color:'#FBF6EA', fillColor:COR_BARRA, fillOpacity:.75});
-    c.bindTooltip(`${esc(m.nome)} (${m.uf}) · ${fmt(m.n)} resposta(s)`, {className:'ponto-tooltip'});
-    c.bindPopup(() => popupMunicipio(m, qual), {maxWidth:340});
+    // ao passar o mouse: a ficha curta, flutuando sobre a página (fora da moldura
+    // do mapa, para não ser cortada na borda); ao clicar ou tocar: a completa
+    c.on('mouseover', e => mostraFicha(fichaMunicipio(m, qual, false), e.originalEvent));
+    c.on('mousemove', e => posicionaFicha(e.originalEvent));
+    c.on('mouseout', escondeFicha);
+    c.bindPopup(() => fichaMunicipio(m, qual, true), {maxWidth:340});
+    c.on('popupopen', escondeFicha);
     camada.addLayer(c);
   });
   // linhas por último: por cima dos círculos, que são semitransparentes, para que
@@ -825,21 +847,72 @@ function renderMapa(){
    (que podem ficar em outro município); no modo "escola", as escolas do município.
    Os nomes foram escritos à mão no formulário; o script junta as grafias
    diferentes da mesma escola e mostra a mais usada. */
-function popupMunicipio(m, qual){
+/* Ficha do município: aparece ao passar o mouse (versão curta) e ao clicar
+   (versão completa, com todas as escolas). Tudo é calculado na hora, só com as
+   respostas do recorte atual que caem naquele município. */
+const FICHA_IND = [
+  ['reconhecidoEscola', ['Sim'], 'reconhecidas/os como quilombolas na escola'],
+  ['escolaTerritorio', ['Sim'], 'estudam em escola em território quilombola'],
+  ['dificuldadeTransporte', ['Sim'], 'relatam dificuldade com o transporte'],
+  ['racismoFrequencia', ['4', '5'], 'presenciam racismo com frequência (nota 4 ou 5)'],
+];
+/* A ficha flutuante: um único elemento na página, reaproveitado por todos os
+   círculos, posicionado ao lado do mouse e virado para o outro lado quando
+   chegaria à borda da tela. */
+function mostraFicha(html, ev){
+  const f = $('fichaFlutuante');
+  f.innerHTML = html; f.classList.add('visivel'); posicionaFicha(ev);
+}
+function posicionaFicha(ev){
+  const f = $('fichaFlutuante');
+  if (!ev || !f.classList.contains('visivel')) return;
+  const w = f.offsetWidth, h = f.offsetHeight, m = 14;
+  let x = ev.clientX + m, y = ev.clientY - h / 2;
+  if (x + w > window.innerWidth - 8) x = ev.clientX - w - m;        // sem espaço à direita: vai para a esquerda
+  y = Math.max(8, Math.min(y, window.innerHeight - h - 8));          // nunca sai por cima nem por baixo
+  f.style.left = Math.max(8, x) + 'px'; f.style.top = y + 'px';
+}
+function escondeFicha(){ $('fichaFlutuante').classList.remove('visivel'); }
+function fichaMunicipio(m, qual, completa){
   const idx = P.mapa[qual] || [], escDe = P.mapa.escolaDe || [], nomes = P.mapa.escolas || [];
+  const linhas = visiveis.filter(r => idx[r._i] === m.idx);
+  const n = linhas.length;
+  // gênero
+  const vg = VARS.genero, gen = vg ? distribuicao(vg, linhas) : null;
+  const generoTxt = gen && gen.n ? vg.ordem.map((c, i) => gen.cont[i] ? `${esc(rotulo(vg, i))} ${fmt(gen.cont[i])}` : '').filter(Boolean).join(' · ') : '';
+  // indicadores
+  const inds = FICHA_IND.filter(([k]) => VARS[k]).map(([k, cats, rot]) => {
+    const v = VARS[k], d = distribuicao(v, linhas);
+    const sim = v.ordem.reduce((t, c, i) => t + (cats.includes(c) ? d.cont[i] : 0), 0);
+    return d.n ? `<li><b>${pctTxt(sim, d.n)}</b> ${esc(rot)} <span class="ficha-n">(${fmt(sim)} de ${fmt(d.n)})</span></li>` : '';
+  }).join('');
+  // deslocamento
+  const com = P.mapa.comunidade || [], esc_ = P.mapa.escola || [];
+  // trajetos: no modo "comunidade", para onde vão estudar; no modo "escola", de onde vêm
+  const outro = new Map();
+  linhas.forEach(r => { const a = com[r._i], b = esc_[r._i];
+    if (a >= 0 && b >= 0 && a !== b){ const k = qual === 'comunidade' ? b : a; outro.set(k, (outro.get(k) || 0) + 1); } });
+  const fora = [...outro.values()].reduce((t, x) => t + x, 0);
+  const lugares = [...outro.entries()].sort((x, y) => y[1] - x[1])
+    .map(([k, q]) => `${esc(P.mapa.municipios[k].nome)} (${P.mapa.municipios[k].uf}) <span class="ficha-n">(${fmt(q)})</span>`).join(', ');
+  const desloc = fora ? `<div class="ficha-linha ficha-desloc">➜ ${qual === 'comunidade'
+    ? `${fmt(fora)} estuda(m) em outro município: ${lugares}` : `${fmt(fora)} vem(êm) de outro município: ${lugares}`}</div>` : '';
+  // escolas
   const cont = new Map(); let semNome = 0;
-  visiveis.forEach(r => {
-    if (idx[r._i] !== m.idx) return;
-    const e = escDe[r._i];
-    if (e == null || e < 0) semNome++; else cont.set(e, (cont.get(e) || 0) + 1);
-  });
-  const itens = [...cont.entries()].sort((a, b) => b[1] - a[1] || nomes[a[0]].localeCompare(nomes[b[0]], 'pt-BR'))
-    .map(([e, n]) => `<li>${esc(nomes[e])} <span style="color:#6E624F">(${fmt(n)})</span></li>`).join('');
+  linhas.forEach(r => { const e = escDe[r._i]; if (e == null || e < 0) semNome++; else cont.set(e, (cont.get(e) || 0) + 1); });
+  const ordem = [...cont.entries()].sort((a, b) => b[1] - a[1] || nomes[a[0]].localeCompare(nomes[b[0]], 'pt-BR'));
+  const mostrar = completa ? ordem : ordem.slice(0, 3);
+  const escolas = mostrar.map(([e, k]) => `<li>${esc(nomes[e])} <span class="ficha-n">(${fmt(k)})</span></li>`).join('') +
+    (!completa && ordem.length > 3 ? `<li class="ficha-n">… e mais ${fmt(ordem.length - 3)} (clique para ver todas)</li>` : '');
   const titulo = qual === 'comunidade' ? 'Escolas onde estudam' : 'Escolas citadas';
-  return `<strong>${esc(m.nome)} (${m.uf})</strong><br>${fmt(m.n)} resposta(s) no recorte atual` +
-    (itens ? `<div class="popup-escolas"><b>${titulo}</b><ul>${itens}</ul></div>` : '') +
-    (semNome ? `<div style="color:#6E624F;font-size:12.5px">${fmt(semNome)} resposta(s) sem nome de escola.</div>` : '') +
-    `<div style="color:#6E624F;font-size:12.5px;margin-top:4px">Nomes como escritos no formulário · posição: centro do município.</div>`;
+  return `<div class="ficha"><strong class="ficha-titulo">${esc(m.nome)} (${m.uf})</strong>` +
+    `<div class="ficha-linha">${fmt(n)} resposta(s) no recorte atual${generoTxt ? ' · ' + generoTxt : ''}</div>` + desloc +
+    (inds ? `<ul class="ficha-ind">${inds}</ul>` : '') +
+    (escolas ? `<div class="ficha-sub">${titulo}</div><ul class="ficha-esc${completa ? ' rolagem' : ''}">${escolas}</ul>` : '') +
+    (completa && semNome ? `<div class="ficha-n">${fmt(semNome)} resposta(s) sem nome de escola.</div>` : '') +
+    (completa ? `<div class="ficha-n" style="margin-top:4px">Nomes como escritos no formulário · posição: centro do município.</div>`
+              : (n < 5 ? `<div class="ficha-n" style="margin-top:4px">Poucas respostas: leia os percentuais com cautela.</div>` : '')) +
+    `</div>`;
 }
 
 /* ==================== CRUZADOR ==================== */
