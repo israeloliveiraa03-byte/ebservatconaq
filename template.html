@@ -191,6 +191,13 @@
     .inst-pronto{font-size:13.5px;color:var(--verde);font-style:italic;margin-top:6px}
     .instalar-direto{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px;font-size:14px;color:var(--medio)}
     .instalar-direto[hidden]{display:none}
+    .recolhe>summary{cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:10px;padding:12px 18px;background:var(--branco);border:1px solid var(--borda);border-left:4px solid #E43324;font-weight:700;color:var(--verde-escuro);font-size:15px}
+    .recolhe>summary::-webkit-details-marker{display:none}
+    .recolhe>summary::before{content:"▸";font-size:14px;transition:transform .2s}
+    .recolhe[open]>summary::before{transform:rotate(90deg)}
+    .recolhe>summary:hover{background:var(--creme)}
+    .recolhe>summary:focus-visible{outline:3px solid var(--dourado);outline-offset:2px}
+    .recolhe[open]>summary{margin-bottom:20px}
     @media(max-width:900px){.grade-instalar{grid-template-columns:1fr}}
     /* ---------- fontes ---------- */
     .fontes-grid{display:grid;grid-template-columns:2fr 1fr;gap:32px}
@@ -375,12 +382,15 @@
         <div class="secao-cabecalho"><div>
             <div class="rotulo">Leve o painel com você</div>
             <h2>Instale o painel como aplicativo</h2>
-            <p class="descricao">O painel pode ficar na tela inicial do celular ou na área de trabalho do computador, com o ícone da ENFMQ, e abrir em tela cheia como um aplicativo. Não é preciso baixar nada de loja: é a mesma página, sempre atualizada. Siga o passo a passo do seu aparelho.</p>
+            <p class="descricao">O painel pode ficar na tela inicial do celular ou na área de trabalho do computador, com o ícone da ENFMQ, e abrir em tela cheia como um aplicativo. Não é preciso baixar nada de loja: é a mesma página, sempre atualizada. Abra o passo a passo abaixo para ver como fazer no seu aparelho.</p>
         </div></div>
         <div class="instalar-direto" id="instalarDireto" hidden>
             <button class="btn-primario" id="btnInstalar">Instalar o painel agora</button>
             <span>Seu navegador permite instalar com um clique.</span>
         </div>
+        <details class="recolhe">
+        <summary>Ver o passo a passo (Android, iPhone e computador)</summary>
+        <div class="recolhe-corpo">
         <div class="grade-instalar">
             <article class="cartao-instalar">
                 <h3><span class="ic-inst" aria-hidden="true">🤖</span> Celular Android</h3>
@@ -417,6 +427,8 @@
             </article>
         </div>
         <div class="caixa-aviso"><strong class="titulo">Recebeu o link pelo WhatsApp ou Instagram?</strong>Esses aplicativos abrem o link num navegador próprio, que não instala páginas. Antes de seguir o passo a passo, toque nos três pontinhos (ou no ícone de navegador) e escolha <strong>Abrir no navegador</strong>, <strong>Abrir no Chrome</strong> ou <strong>Abrir no Safari</strong>.<br><br><strong>E as atualizações?</strong> O aplicativo é a própria página: sempre que for aberto, mostra os dados mais recentes, sem precisar instalar de novo. Para remover, basta apagar o ícone, como qualquer aplicativo.</div>
+        </div>
+        </details>
     </div>
 </section>
 
