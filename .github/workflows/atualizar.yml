@@ -74,7 +74,7 @@ jobs:
       # páginas públicas.
       - name: Separar o que vai para o site
         # a página, o manifesto e os ícones que permitem instalar o painel como app
-        run: mkdir _site && cp index.html manifest.webmanifest icone-*.png _site/
+        run: mkdir _site && cp index.html manifest.webmanifest sw.js icone-*.png _site/
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
