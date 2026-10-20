@@ -69,8 +69,9 @@ jobs:
             git push
           fi
 
-      # Só o index.html vai para o site. O script, o template e a lista de
-      # municípios ficam no repositório, mas não viram páginas públicas.
+      # Para o site vão só a página, o manifesto e os ícones. O script, o
+      # template e a lista de municípios ficam no repositório, mas não viram
+      # páginas públicas.
       - name: Separar o que vai para o site
         # a página, o manifesto e os ícones que permitem instalar o painel como app
         run: mkdir _site && cp index.html manifest.webmanifest icone-*.png _site/
