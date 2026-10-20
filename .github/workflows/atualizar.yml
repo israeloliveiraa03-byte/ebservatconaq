@@ -72,7 +72,8 @@ jobs:
       # Só o index.html vai para o site. O script, o template e a lista de
       # municípios ficam no repositório, mas não viram páginas públicas.
       - name: Separar o que vai para o site
-        run: mkdir _site && cp index.html _site/
+        # a página, o manifesto e os ícones que permitem instalar o painel como app
+        run: mkdir _site && cp index.html manifest.webmanifest icone-*.png _site/
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
