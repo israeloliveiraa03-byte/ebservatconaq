@@ -195,7 +195,6 @@
     .btn-app:hover{background:#C92A1C}
     .btn-app:focus-visible{outline:3px solid var(--dourado);outline-offset:2px}
     .btn-app[hidden]{display:none}
-    header .btn-app{margin-top:20px}
     .cartao-instalar.destaque{box-shadow:0 0 0 4px #F6D63C}
     .janela-app{margin:auto;border:0;border-top:6px solid #E43324;padding:24px 26px;max-width:min(440px,calc(100vw - 32px));background:var(--branco);color:var(--texto);font-family:var(--fonte)}
     .janela-app::backdrop{background:rgba(36,56,42,.55)}
@@ -296,7 +295,6 @@
             <span><strong>Comunidades em:</strong> __TOTAL_UFS__ UF · __TOTAL_MUNICIPIOS__ municípios</span>
             <span><strong>Período das respostas:</strong> __PERIODO__</span>
         </div>
-        <button type="button" class="btn-app" data-instalar hidden><span aria-hidden="true">📲</span> Instalar o painel como app</button>
         <nav class="navegacao" id="navegacao" aria-label="Seções do painel"></nav>
     </div>
 </header>
@@ -1244,7 +1242,7 @@ async function instalarApp() {
       '<p>Você abriu o painel por dentro de outro aplicativo (WhatsApp, Instagram ou Facebook), e ele não deixa instalar.</p>' +
       '<ol><li>Toque nos <strong>três pontinhos</strong> (⋮ ou •••), no canto da tela.</li>' +
       '<li>Escolha <strong>Abrir no navegador</strong>' + (ehIOS ? ' ou <strong>Abrir no Safari</strong>' : ' ou <strong>Abrir no Chrome</strong>') + '.</li>' +
-      '<li>Lá, toque de novo em <strong>📲 Instalar o painel como app</strong>.</li></ol>' +
+      '<li>Lá, volte a esta parte do painel e toque de novo em <strong>📲 Instalar o painel</strong>.</li></ol>' +
       '<p>Se não achar a opção, copie o link e cole no navegador.</p>', true);
     return;
   }
