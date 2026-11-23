@@ -645,7 +645,8 @@ function media(v, d){
 
 /* ==================== SÍNTESE ==================== */
 const CARTOES = [
-  /* "somente" só aparece quando o percentual fica abaixo de metade: num recorte
+  /* "somente" só aparece quando o percentual fica abaixo de metade (e acima de
+     zero, porque "somente 0%" não faz sentido): num recorte
      (um estado, por exemplo) em que a maioria é identificada, "somente 80%"
      passaria a ideia errada. A nota mostra quantas pessoas não sabem informar,
      porque elas também entram na conta do percentual. */
@@ -665,7 +666,7 @@ function renderIndicadores(){
     const v = VARS[c.k]; if (!v) return;
     const d = distribuicao(v, visiveis);
     const sim = v.ordem.reduce((t, cat, i) => t + (c.cats.includes(cat) ? d.cont[i] : 0), 0);
-    const pre = c.pre && d.n && 100*sim/d.n < c.preAbaixoDe ? `<span class="prefixo">${c.pre}</span> ` : '';
+    const pre = c.pre && sim > 0 && 100*sim/d.n < c.preAbaixoDe ? `<span class="prefixo">${c.pre}</span> ` : '';
     let nota = d.n ? `${fmt(sim)} de ${fmt(d.n)} que responderam` : 'ninguém respondeu no recorte';
     if (c.mostraNaoSei && d.n){
       const ns = v.ordem.reduce((t, cat, i) => t + (/^não sei/i.test(cat) ? d.cont[i] : 0), 0);
@@ -966,7 +967,9 @@ function renderMapa(){
    (versão completa, com todas as escolas). Tudo é calculado na hora, só com as
    respostas do recorte atual que caem naquele município. */
 const FICHA_IND = [
-  ['reconhecidoEscola', ['Sim'], 'reconhecidas/os como quilombolas na escola'],
+  // 4º item: os mesmos cuidados do cartão de destaque ("somente" abaixo de 50% e
+  // quantas pessoas não sabem informar)
+  ['identificaMatricula', ['Sim'], 'identificadas/os pela escola como quilombolas na matrícula', {pre:'somente', preAbaixoDe:50, mostraNaoSei:true}],
   ['escolaTerritorio', ['Sim'], 'estudam em escola em território quilombola'],
   ['dificuldadeTransporte', ['Sim'], 'relatam dificuldade com o transporte'],
   ['racismoFrequencia', ['4', '5'], 'presenciam racismo com frequência (nota 4 ou 5)'],
@@ -996,10 +999,14 @@ function fichaMunicipio(m, qual, completa){
   const vg = VARS.genero, gen = vg ? distribuicao(vg, linhas) : null;
   const generoTxt = gen && gen.n ? vg.ordem.map((c, i) => gen.cont[i] ? `${esc(rotulo(vg, i))} ${fmt(gen.cont[i])}` : '').filter(Boolean).join(' · ') : '';
   // indicadores
-  const inds = FICHA_IND.filter(([k]) => VARS[k]).map(([k, cats, rot]) => {
+  const inds = FICHA_IND.filter(([k]) => VARS[k]).map(([k, cats, rot, op = {}]) => {
     const v = VARS[k], d = distribuicao(v, linhas);
+    if (!d.n) return '';
     const sim = v.ordem.reduce((t, c, i) => t + (cats.includes(c) ? d.cont[i] : 0), 0);
-    return d.n ? `<li><b>${pctTxt(sim, d.n)}</b> ${esc(rot)} <span class="ficha-n">(${fmt(sim)} de ${fmt(d.n)})</span></li>` : '';
+    const pre = op.pre && sim > 0 && 100*sim/d.n < op.preAbaixoDe ? op.pre + ' ' : '';
+    const ns = op.mostraNaoSei ? v.ordem.reduce((t, c, i) => t + (/^não sei/i.test(c) ? d.cont[i] : 0), 0) : 0;
+    const conta = `${fmt(sim)} de ${fmt(d.n)}${ns ? `; ${fmt(ns)} não sabe${ns > 1 ? 'm' : ''} informar` : ''}`;
+    return `<li><b>${pre}${pctTxt(sim, d.n)}</b> ${esc(rot)} <span class="ficha-n">(${conta})</span></li>`;
   }).join('');
   // deslocamento
   const com = P.mapa.comunidade || [], esc_ = P.mapa.escola || [];
