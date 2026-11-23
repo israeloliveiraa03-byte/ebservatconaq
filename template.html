@@ -60,6 +60,7 @@
     .indicador{background:var(--branco);padding:24px 22px}
     .indicador .valor{font-size:32px;font-weight:700;color:var(--verde);line-height:1}
     .indicador .valor.texto{font-size:19px;line-height:1.25}
+    .indicador .valor .prefixo{font-size:18px;font-weight:600}
     .indicador .rotulo{margin-top:10px;font-size:13.5px;font-weight:600;color:var(--grafite);line-height:1.35}
     .indicador .nota{margin-top:6px;font-size:13px;color:var(--medio);font-style:italic}
     .filtros{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:20px;align-items:end;padding:24px;background:var(--fundo);border:1px solid var(--claro)}
@@ -644,7 +645,12 @@ function media(v, d){
 
 /* ==================== SÍNTESE ==================== */
 const CARTOES = [
-  {k:'reconhecidoEscola', cats:['Sim'], rot:'são reconhecidas/os como quilombolas na escola'},
+  /* "somente" só aparece quando o percentual fica abaixo de metade: num recorte
+     (um estado, por exemplo) em que a maioria é identificada, "somente 80%"
+     passaria a ideia errada. A nota mostra quantas pessoas não sabem informar,
+     porque elas também entram na conta do percentual. */
+  {k:'identificaMatricula', cats:['Sim'], pre:'somente', preAbaixoDe:50, mostraNaoSei:true,
+   rot:'são identificadas/os pelas escolas como quilombolas na matrícula'},
   {k:'formacaoProfessores', cats:['Não'], rot:'dizem que professoras/es não recebem formação em Educação Escolar Quilombola'},
   {k:'materiais', cats:['Não possui'], rot:'dizem que a escola não tem material didático sobre história e cultura quilombola'},
   {k:'dificuldadeTransporte', cats:['Sim'], rot:'relatam dificuldade de estudantes quilombolas com o transporte escolar'},
@@ -659,7 +665,13 @@ function renderIndicadores(){
     const v = VARS[c.k]; if (!v) return;
     const d = distribuicao(v, visiveis);
     const sim = v.ordem.reduce((t, cat, i) => t + (c.cats.includes(cat) ? d.cont[i] : 0), 0);
-    cards.push([pctTxt(sim, d.n), c.rot, d.n ? `${fmt(sim)} de ${fmt(d.n)} que responderam` : 'ninguém respondeu no recorte', false]);
+    const pre = c.pre && d.n && 100*sim/d.n < c.preAbaixoDe ? `<span class="prefixo">${c.pre}</span> ` : '';
+    let nota = d.n ? `${fmt(sim)} de ${fmt(d.n)} que responderam` : 'ninguém respondeu no recorte';
+    if (c.mostraNaoSei && d.n){
+      const ns = v.ordem.reduce((t, cat, i) => t + (/^não sei/i.test(cat) ? d.cont[i] : 0), 0);
+      if (ns) nota += `; ${fmt(ns)} não sabem informar`;
+    }
+    cards.push([pre + pctTxt(sim, d.n), c.rot, nota, false]);
   });
   const vo = VARS.obstaculos;
   if (vo){
