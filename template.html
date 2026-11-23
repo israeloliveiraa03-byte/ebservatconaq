@@ -384,7 +384,7 @@
                 </div>
                 <div class="nota-metodo" id="notaCruzador"></div>
             </div>
-            <div class="barra-acoes"><button class="btn-primario" id="btnBaixarCruzamento">Baixar este cruzamento (CSV)</button></div>
+            <div class="barra-acoes"><button class="btn-primario" id="btnBaixarImagem">Baixar o gráfico (imagem)</button><button class="btn-limpar" id="btnBaixarCruzamento">Baixar a tabela (CSV)</button></div>
         </div>
     </div>
 </section>
@@ -1108,14 +1108,17 @@ function renderCruzador(){
     const tot = exibidas.reduce((t, i) => t + linhas[i].n, 0);
     datasets[0].data = exibidas.map(i => 100*linhas[i].n/tot);
   }
-  desenha('graficoCruzador', {type:'bar',
-    data:{labels:exibidas.map(i => quebra(rotulo(A, i), 34)), datasets},
+  // montaCfg() cria a configuração do zero a cada chamada: a mesma receita serve
+  // para o gráfico da tela e para o da imagem baixada
+  const montaCfg = () => ({type:'bar',
+    data:{labels:exibidas.map(i => quebra(rotulo(A, i), 34)), datasets:datasets.map(d => ({...d, data:[...d.data]}))},
     options:{indexAxis:'y', responsive:true, maintainAspectRatio:false,
       plugins:{legend:{display:!!usaB, position:'bottom', labels:{boxWidth:12}},
         tooltip:{callbacks:{label:c => ` ${c.dataset.label}: ${modo === 'media' ? fvMedia(c.parsed.x) : fv(c.parsed.x)}`}}},
       scales:{x:{stacked:empilha, beginAtZero:true, max:(modo==='pct' && (empilha || !usaB)) ? 100 : (modo==='media' ? E.max : undefined),
                  title:{display:true, text:unidade}, ticks:{callback:v => modo==='pct' ? v+'%' : fmt(v)}},
               y:{stacked:empilha, grid:{display:false}}}}});
+  desenha('graficoCruzador', montaCfg());
 
   /* tabela: o percentual vem sempre com a contagem ao lado, porque "100%" de 5
      pessoas e de 50 pessoas parecem iguais sem o n */
@@ -1131,13 +1134,15 @@ function renderCruzador(){
   $('corpoCruzador').innerHTML = exibidas.map(i =>
     `<tr><td>${esc(rotulo(A, i))}</td>${series.map(j => `<td>${celula(i, j)}</td>`).join('')}<td class="num">${fmt(linhas[i].n)}</td></tr>`).join('');
 
-  ultimoCruzamento = {A, usaB, series, exibidas, valor, modo, linhas, E};
+  ultimoCruzamento = {A, usaB, series, exibidas, valor, modo, linhas, E, montaCfg, altura, unidade, empilha,
+                      fv: modo === 'media' ? fvMedia : fv};
   const partes = [];
   partes.push(usaB ? `"${A.rot}" × "${usaB.rot}"` : modo === 'media' ? `Nota média de "${E.rot}" por "${A.rot}"` : `Distribuição de "${A.rot}"`);
   partes.push(`${fmt(visiveis.length)} respostas no recorte.`);
   if (usaB && modo === 'pct') partes.push('Cada linha soma 100% entre quem respondeu às duas perguntas' + (multiB ? ', exceto quando a pergunta cruzada é de múltipla escolha: aí cada pessoa conta em todas as opções que marcou.' : '.'));
   if (A.tipo === 'multipla') partes.push('As linhas vêm de uma pergunta de múltipla escolha: uma pessoa aparece em todas as linhas que marcou.');
   $('notaCruzador').textContent = partes.join(' ');
+  ultimoCruzamento.partes = partes;
 }
 /* O que quer dizer cada nota da escala ("3 – Às vezes" → "Às vezes"). */
 function significado(E, v){
@@ -1188,6 +1193,103 @@ function baixaCruzamento(){
   const corpo = c.exibidas.map(i => [rotulo(c.A, i)].concat(c.series.map(j => fv(c.usaB || c.modo === 'media' ? c.valor(i, j) : c.linhas[i].n)), [c.linhas[i].n]));
   baixaArquivo('cruzamento-diagnostico-eeq.csv', linhasCSV([cab].concat(corpo)));
 }
+/* Imagem do cruzamento (PNG). Não é um "print" da tela: o gráfico é desenhado
+   de novo, fora da vista, numa largura fixa (fica igual no celular e no
+   computador), com o dobro de pixels (nítido em slide e em documento) e com o
+   valor escrito em cada barra, porque na imagem não há o "passar o mouse". Em
+   volta vão título, recorte, notas de leitura e a fonte dos dados. */
+const IMG = {larg:1200, marg:48, nitidez:2};
+function linhasDeTexto(ctx, texto, largura){        // quebra um texto em linhas que cabem na largura
+  const out = []; let l = '';
+  String(texto).split(' ').forEach(p => { const t = l ? l + ' ' + p : p; if (ctx.measureText(t).width > largura && l){ out.push(l); l = p; } else l = t; });
+  if (l) out.push(l); return out;
+}
+function rotulosValor(c){
+  return {id:'rotulosValor', afterDatasetsDraw(ch){
+    const ctx = ch.ctx; ctx.save();
+    ctx.font = `bold 12px ${Chart.defaults.font.family}`; ctx.textBaseline = 'middle';
+    ch.data.datasets.forEach((ds, k) => ch.getDatasetMeta(k).data.forEach((barra, i) => {
+      const v = ds.data[i]; if (v == null || v === 0) return;
+      const t = c.fv(v), w = ctx.measureText(t).width;
+      if (c.empilha){
+        // dentro do pedaço, só se couber; senão, o número fica na tabela/CSV
+        if (Math.abs(barra.x - barra.base) < w + 8){ c.omitidos = true; return; }
+        ctx.fillStyle = corTexto(ds.backgroundColor); ctx.textAlign = 'center';
+        ctx.fillText(t, (barra.x + barra.base) / 2, barra.y);
+      } else { ctx.fillStyle = '#24382A'; ctx.textAlign = 'left'; ctx.fillText(t, barra.x + 6, barra.y); }
+    }));
+    ctx.restore();
+  }};
+}
+function nomeArquivo(c){
+  const slug = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40).replace(/^-+|-+$/g, '');
+  return 'cruzamento-' + slug(c.A.rot) + (c.usaB ? '-x-' + slug(c.usaB.rot) : c.modo === 'media' ? '-media-' + slug(c.E.rot) : '') + '.png';
+}
+async function baixaImagemCruzamento(){
+  const c = ultimoCruzamento; if (!c) return;
+  const {larg, marg, nitidez} = IMG, largGraf = larg - 2*marg;
+  const fonte = Chart.defaults.font.family;
+  // 1. o gráfico, fora da tela
+  const altGraf = Math.round(c.altura * 1.1);
+  const cv = document.createElement('canvas');
+  cv.style.cssText = `position:fixed;left:-99999px;top:0;width:${largGraf}px;height:${altGraf}px`;
+  cv.width = largGraf; cv.height = altGraf; document.body.appendChild(cv);
+  const cfg = c.montaCfg();
+  Object.assign(cfg.options, {responsive:false, animation:false, devicePixelRatio:nitidez,
+    layout:{padding:{right: c.empilha ? 8 : (c.modo === 'media' ? 150 : 70)}}});
+  cfg.options.plugins.tooltip = {enabled:false};
+  // na imagem não há tabela ao lado: o nº de respostas vai embaixo do nome de cada
+  // linha, para que "100%" de 1 pessoa não pareça igual a "100%" de 50
+  cfg.data.labels = c.exibidas.map((i, k) => [...[].concat(cfg.data.labels[k]),
+    `(${fmt(c.modo === 'media' ? c.linhas[i].nm : c.linhas[i].n)} resposta${(c.modo === 'media' ? c.linhas[i].nm : c.linhas[i].n) === 1 ? '' : 's'})`]);
+  c.omitidos = false;
+  cfg.plugins = [rotulosValor(c)];
+  const graf = new Chart(cv, cfg);
+
+  // 2. os textos em volta
+  const medida = document.createElement('canvas').getContext('2d');
+  const titulo = c.partes[0];
+  const recorte = $('faixaRecorte').textContent.replace(/^Recorte atual:\s*/, 'Recorte: ');
+  const notas = c.partes.slice(2);
+  if (c.omitidos) notas.push('Os valores das partes muito estreitas não aparecem escritos: estão na tabela do painel.');
+  const site = location.href.split('#')[0].replace(/^https?:\/\//, '').replace(/index\.html$/, '').replace(/\/$/, '');
+  const fonteTxt = `Fonte: Diagnóstico da Educação Escolar Quilombola – ENFMQ / CONAQ. Dados de ${P.gerado}. Painel: ${site}`;
+  medida.font = `bold 26px ${fonte}`; const linTit = linhasDeTexto(medida, titulo, largGraf - 90);
+  medida.font = `16px ${fonte}`; const linSub = linhasDeTexto(medida, `Medida: ${c.unidade} · ${recorte}`, largGraf - 90);
+  medida.font = `italic 14px ${fonte}`; const linNotas = notas.flatMap(n => linhasDeTexto(medida, n, largGraf));
+  medida.font = `13px ${fonte}`; const linFonte = linhasDeTexto(medida, fonteTxt, largGraf);
+  const altura = 10 + marg + linTit.length*32 + 8 + linSub.length*22 + 24 + altGraf + 20
+               + linNotas.length*20 + (linNotas.length ? 14 : 0) + 1 + 14 + linFonte.length*18 + marg - 12;
+
+  // 3. a imagem final
+  const fig = document.createElement('canvas');
+  fig.width = larg * nitidez; fig.height = altura * nitidez;
+  const ctx = fig.getContext('2d'); ctx.scale(nitidez, nitidez);
+  ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, larg, altura);
+  ctx.fillStyle = '#E43324'; ctx.fillRect(0, 0, larg, 10);           // faixa vermelha da ENFMQ
+  const logo = new Image(); logo.src = 'icone-192.png';
+  try { await logo.decode(); ctx.drawImage(logo, larg - marg - 64, 10 + marg - 6, 64, 64); } catch (e) { /* sem logo, segue */ }
+  let y = 10 + marg; ctx.textBaseline = 'top';
+  ctx.fillStyle = '#24382A'; ctx.font = `bold 26px ${fonte}`;
+  linTit.forEach(l => { ctx.fillText(l, marg, y); y += 32; }); y += 8;
+  ctx.fillStyle = '#6E624F'; ctx.font = `16px ${fonte}`;
+  linSub.forEach(l => { ctx.fillText(l, marg, y); y += 22; }); y += 24;
+  ctx.drawImage(cv, marg, y, largGraf, altGraf); y += altGraf + 20;
+  ctx.fillStyle = '#4A4033'; ctx.font = `italic 14px ${fonte}`;
+  linNotas.forEach(l => { ctx.fillText(l, marg, y); y += 20; }); if (linNotas.length) y += 14;
+  ctx.fillStyle = '#E4DAC6'; ctx.fillRect(marg, y, largGraf, 1); y += 14;
+  ctx.fillStyle = '#6E624F'; ctx.font = `13px ${fonte}`;
+  linFonte.forEach(l => { ctx.fillText(l, marg, y); y += 18; });
+  graf.destroy(); cv.remove();
+
+  // 4. entrega o arquivo
+  fig.toBlob(b => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(b); a.download = nomeArquivo(c);
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }, 'image/png');
+}
 function baixaBase(){
   const cab = LINHA.map(v => v.k);
   const corpo = DADOS.map(r => LINHA.map(v => marcadas(v, r[v.k]).map(i => v.ordem[i]).join(' | ')));
@@ -1209,6 +1311,7 @@ function atualiza(){
 function ligaEventos(){
   ['cruzA','cruzB','cruzModo','cruzEscala'].forEach(id => $(id).addEventListener('change', renderCruzador));
   $('btnBaixarCruzamento').addEventListener('click', baixaCruzamento);
+  $('btnBaixarImagem').addEventListener('click', baixaImagemCruzamento);
   $('btnBaixarBase').addEventListener('click', baixaBase);
   $('btnBaixarDicionario').addEventListener('click', baixaDicionario);
   document.addEventListener('click', e => { const b = e.target.closest('[data-cruzar]'); if (b) cruzar(b.dataset.cruzar); });
