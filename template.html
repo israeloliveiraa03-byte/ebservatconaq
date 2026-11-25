@@ -998,7 +998,10 @@ function quadroMunicipios(){
     `<p>As ${fmt(P.n)} respostas vêm de ${fmt(P.resumo.ufs)} estados. ` +
     (soEsc ? `${plural(soEsc, 'município aparece', 'municípios aparecem')} só como local de escola: são municípios para onde estudantes vão estudar, vindos de outro município (as setas do mapa). ` : '') +
     `Estes números são da base inteira e não mudam com os filtros; a nota embaixo do mapa mostra quantos municípios entram no recorte escolhido.</p>` + minimo;
-  $('topoMunicipios').textContent = `${semC || semE ? 'pelo menos ' : ''}${fmt(todos.size)} ao todo (${fmt(com.size)} das comunidades · ${fmt(esc.size)} das escolas)`;
+  // 49 + 54 não dá 60: um município que tem comunidade e escola conta uma vez só no total
+  const comuns = com.size + esc.size - todos.size;
+  $('topoMunicipios').textContent = `somam-se ${fmt(todos.size)} (${fmt(com.size)} das comunidades e ${fmt(esc.size)} das escolas` +
+    (comuns ? `; ${fmt(comuns)} aparecem nas duas listas)` : ')');
 }
 
 /* Ao clicar num município: as escolas citadas pelas respostas do recorte atual.
