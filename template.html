@@ -170,7 +170,6 @@
     .quadro-municipios .num{font-size:30px;font-weight:700;color:var(--verde-escuro);line-height:1.1;font-variant-numeric:tabular-nums}
     .quadro-municipios .rot{font-size:14px;color:var(--texto);max-width:230px}
     .quadro-municipios p{font-size:14px;color:var(--texto);margin-top:6px}
-    .quadro-municipios p.minimo{color:#5C4A1A}
 
     /* ---------- cruzador ---------- */
     .construtor-caixa{border:1px solid var(--claro);background:var(--fundo);padding:24px}
@@ -969,26 +968,14 @@ function renderMapa(){
 }
 
 /* Quantos municípios a pesquisa alcançou, na base inteira (não muda com os
-   filtros). O município foi escrito à mão: os que não foram reconhecidos ficam
-   fora desta conta, por isso os números são um mínimo. Mostramos só QUANTAS
-   respostas ficaram de fora, nunca o que foi escrito: muitas vezes é o nome da
-   comunidade, que, com uma resposta só, ajudaria a identificar quem respondeu. */
+   filtros). Os municípios escritos de um jeito que não foi reconhecido ficam
+   fora desta conta (o log da atualização lista quais são). */
 function quadroMunicipios(){
   const M = P.mapa, ok = x => x >= 0;
   const com = new Set(M.comunidade.filter(ok)), esc = new Set(M.escola.filter(ok));
   const todos = new Set([...com, ...esc]), soEsc = [...esc].filter(x => !com.has(x)).length;
-  const semC = M.comunidade.filter(x => !ok(x)).length, semE = M.escola.filter(x => !ok(x)).length;
   const plural = (n, um, varios) => `${fmt(n)} ${n === 1 ? um : varios}`;
   const item = (n, rot) => `<div><div class="num">${fmt(n)}</div><div class="rot">${rot}</div></div>`;
-  let minimo;
-  if (semC || semE){
-    const partes = [];
-    if (semC) partes.push(`${plural(semC, 'resposta', 'respostas')} (município da comunidade)`);
-    if (semE) partes.push(`${plural(semE, 'resposta', 'respostas')} (município da escola)`);
-    minimo = `<p class="minimo"><strong>Estes números são um mínimo.</strong> O município foi escrito à mão no formulário e reconhecido automaticamente. ` +
-      `Em ${partes.join(' e em ')}, o que foi escrito não permitiu reconhecer o município: muitas vezes é o nome da comunidade ou do sítio no lugar do nome do município. ` +
-      `Essas respostas ficam fora desta contagem e do mapa, mas continuam em todos os gráficos. Por isso, o total real de municípios pode ser um pouco maior.</p>`;
-  } else minimo = '<p>Todas as respostas tiveram o município reconhecido.</p>';
   $('quadroMunicipios').innerHTML =
     `<div class="numeros">` +
       item(todos.size, 'municípios diferentes ao todo, somando comunidades e escolas') +
@@ -996,8 +983,8 @@ function quadroMunicipios(){
       item(esc.size, 'municípios onde ficam as escolas') +
     `</div>` +
     `<p>As ${fmt(P.n)} respostas vêm de ${fmt(P.resumo.ufs)} estados. ` +
-    (soEsc ? `${plural(soEsc, 'município aparece', 'municípios aparecem')} só como local de escola: são municípios para onde estudantes vão estudar, vindos de outro município (as setas do mapa). ` : '') +
-    `Estes números são da base inteira e não mudam com os filtros; a nota embaixo do mapa mostra quantos municípios entram no recorte escolhido.</p>` + minimo;
+    (soEsc ? `${plural(soEsc, 'município aparece', 'municípios aparecem')} só como local de escola: são municípios para onde estudantes vão estudar, vindos de outro município (as setas do mapa).` : '') +
+    `</p>`;
   // 49 + 54 não dá 60: um município que tem comunidade e escola conta uma vez só no total
   const comuns = com.size + esc.size - todos.size;
   $('topoMunicipios').textContent = `somam-se ${fmt(todos.size)} (${fmt(com.size)} das comunidades e ${fmt(esc.size)} das escolas` +
