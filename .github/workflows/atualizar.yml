@@ -40,7 +40,7 @@ jobs:
     timeout-minutes: 10
     environment:
       name: github-pages
-      url: ${{ steps.publicar.outputs.page_url }}
+      url: ${{ steps.publicar.outputs.page_url || steps.publicar2.outputs.page_url }}
     steps:
       - name: Baixar o repositório
         uses: actions/checkout@v4
@@ -80,6 +80,18 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
+      # Às vezes o GitHub demora a "enxergar" o pacote que acabou de ser enviado
+      # e a publicação falha com "No artifacts named github-pages". Não é erro do
+      # painel: esperar um minuto e tentar de novo resolve. Por isso a primeira
+      # tentativa pode falhar sem parar a rotina; só a segunda conta.
       - name: Publicar no GitHub Pages
         id: publicar
+        continue-on-error: true
+        uses: actions/deploy-pages@v4
+      - name: Esperar um minuto, se a publicação falhou
+        if: steps.publicar.outcome == 'failure'
+        run: sleep 60
+      - name: Publicar no GitHub Pages (2ª tentativa)
+        id: publicar2
+        if: steps.publicar.outcome == 'failure'
         uses: actions/deploy-pages@v4
